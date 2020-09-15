@@ -1,0 +1,1 @@
+Make graceful handling for when no VIRTUAL_ENV exists (currently barfs on vim startup)

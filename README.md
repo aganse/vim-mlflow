@@ -17,6 +17,10 @@ With many thanks to:
   https://slacker.ro/2019/10/03/analyzing-your-mlflow-data-with-dataframes
 * MLFlow Python API at
   https://www.mlflow.org/docs/latest/python_api/mlflow.html
+* MLFlow REST API at
+  https://www.mlflow.org/docs/latest/rest-api.html
+* MLFlow Projects page at
+  https://www.mlflow.org/docs/latest/projects.html
 * The Python Interface to Vim, 2019 Dec 07, at
   https://vimhelp.org/if_pyth.txt.html#python-vim
 * Alternative to execfile in Python 3, Stack Overflow, 2011 Jun 15 at
@@ -30,7 +34,7 @@ This plugin relies on vim being run in a python environment that has mlflow
 installed.
 
 Might be useful later:
-https://github.com/jmcantrell/vim-virtualenv/blob/master/autoload/virtualenv.vim
-https://stackoverflow.com/questions/3881534/set-python-virtualenv-in-vim
-https://stevelosh.com/blog/2011/09/writing-vim-plugins
-https://duseev.com/articles/vim-python-pipenv
+* https://github.com/jmcantrell/vim-virtualenv/blob/master/autoload/virtualenv.vim
+* https://stackoverflow.com/questions/3881534/set-python-virtualenv-in-vim
+* https://stevelosh.com/blog/2011/09/writing-vim-plugins
+* https://duseev.com/articles/vim-python-pipenv

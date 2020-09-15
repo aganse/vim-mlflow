@@ -1,4 +1,5 @@
-# vim-mlflow
+help_vim_mlflow.txt       For Vim version 8.2     Last change: 2020 Sep 15
+
 A Vim plugin to view in Vim the tables and info one sees in an MLFlow website
 
 
