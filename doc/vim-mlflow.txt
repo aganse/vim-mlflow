@@ -1,0 +1,10 @@
+# vim-mlflow
+A Vim plugin to view in Vim the tables and info one sees in an MLFlow website
+
+
+With many thanks to the Writing Vim plugin in Python article by Timur Rubeko at
+http://candidtim.github.io/vim/2017/08/11/write-vim-plugin-in-python.html
+
+
+Add reference to this plugin into .vimrc file:
+Plugin 'file:///Users/aganse/Documents/src/python/vim-mlflow'
