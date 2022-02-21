@@ -39,10 +39,27 @@ function! RunMLflow()
   " Insert the results.
   call append(0, l:results)
 
+  " Colorize the contents
+  set nonumber
+  call ColorizeMLflowBuffer()
+
+endfunction
+
+
+function! ColorizeMLflowBuffer()
+    call matchadd("pythonStatement", "Experiments:")
+    call matchadd("pythonStatement", "Runs in expt .*:")
+    call matchadd("pythonStatement", "Params in run .*:")
+    call matchadd("pythonStatement", "Metrics in run .*:")
+    call matchadd("pythonStatement", "Tags in run .*:")
+    call matchadd("pythonFunction", "------*")
+    call matchadd("pythonNumber", s:current_runid[0:4])
 endfunction
 
 
 function! MainPageMLflow()
+let s:current_exptid = "0"
+let s:current_runid = "c3ab61002e3e40d3b421fc2b390497e0"
 
 python3 << EOF
 import os, sys

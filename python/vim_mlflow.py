@@ -2,6 +2,7 @@ from datetime import datetime
 import mlflow
 from mlflow.entities import ViewType
 from mlflow.tracking import MlflowClient
+import vim
 
 
 def getMLflowExpts(mlflow_tracking_uri):
@@ -17,7 +18,7 @@ def getMLflowExpts(mlflow_tracking_uri):
         for expt in expts:
             output_lines.append(f"{expt.experiment_id}:  {expt.name}")
         output_lines.append("")
-        return output_lines
+        return output_lines, [expt.experiment_id for expt in expts]
 
     except ModuleNotFoundError:
         print('Sorry, `mlflow` is not installed. See :h vim-mlflow for more details on setup.')
@@ -38,7 +39,7 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
             #current_runid = run.run_id
             output_lines.append(f"{run.run_id[:5]}: {st}")
         output_lines.append("")
-        return output_lines
+        return output_lines, [run.run_id for run in runs]
 
     except ModuleNotFoundError:
         print('Sorry, `mlflow` is not installed. See :h vim-mlflow for more details on setup.')
@@ -102,11 +103,13 @@ def getTagsListForRun(mlflow_tracking_uri, current_runid):
 
 
 def getMainPageMLflow(mlflow_tracking_uri):
-    current_exptid = "0"
-    current_runid = "c3ab61002e3e40d3b421fc2b390497e0"
+    current_exptid = vim.eval("s:current_exptid")
+    current_runid = vim.eval("s:current_runid")
     out = [""]
-    out.extend(getMLflowExpts(mlflow_tracking_uri))
-    out.extend(getRunsListForExpt(mlflow_tracking_uri, current_exptid))
+    text, exptids = getMLflowExpts(mlflow_tracking_uri)
+    out.extend(text)
+    text, runids = getRunsListForExpt(mlflow_tracking_uri, current_exptid)
+    out.extend(text)
     out.extend(getParamsListForRun(mlflow_tracking_uri, current_runid))
     out.extend(getMetricsListForRun(mlflow_tracking_uri, current_runid))
     out.extend(getTagsListForRun(mlflow_tracking_uri, current_runid))
