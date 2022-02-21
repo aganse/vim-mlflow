@@ -38,3 +38,10 @@ Might be useful later:
 * https://stackoverflow.com/questions/3881534/set-python-virtualenv-in-vim
 * https://stevelosh.com/blog/2011/09/writing-vim-plugins
 * https://duseev.com/articles/vim-python-pipenv
+* https://blog.semanticart.com/2017/01/05/lets-write-a-basic-vim-plugin  <<--- instrumental
+* https://devhints.io/vimscript  <<--- instrumental
+* https://github.com/jceb/vim-orgmode
+   (note orgguide.txt linked in readme; near bottom of that page note
+    sections "Structure and Source Code", "Writing a plugin" (which is about
+    writing an OrgMode plugin, not vim plugin per se), "Keybindings", and
+    "Creating Tests Cases")

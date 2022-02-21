@@ -1,14 +1,48 @@
 let s:plugin_root_dir = fnamemodify(resolve(expand('<sfile>:p')), ':h')
 
+nnoremap <buffer> <localleader>m :call RunMLflow()<cr>
+let g:mlflow_tracking_uri = "http://localhost:5000"
+
 if !has("python3")
-    echo "vim has to be compiled with +python3 to run this"
+    echo "Error: vim must be compiled with +python3 to run the vim-mlflow plugin."
     finish
 endif
 
+" Only load vim-mlflow plugin once
 if exists('g:vim_mlflow_plugin_loaded')
     finish
 endif
 
+
+function! RunMLflow()
+  let l:results = MainPageMLflow()
+
+  " Create a split with a meaningful name
+  let l:name = '__MLflow__'
+  let g:vim_mlflow_width = 40
+
+  if bufwinnr(l:name) == -1
+      " Open a new split
+      execute 'vsplit ' . l:name
+      execute 'vertical resize ' . g:vim_mlflow_width 
+  else
+      " Focus the existing window
+      execute bufwinnr(l:name) . 'wincmd w'
+  endif
+
+  " Clear out existing content
+  normal! gg"_dG
+
+  " Don't prompt to save the buffer
+  set buftype=nofile
+
+  " Insert the results.
+  call append(0, l:results)
+
+endfunction
+
+
+function! MainPageMLflow()
 
 python3 << EOF
 import os, sys
@@ -22,7 +56,12 @@ if 'VIRTUAL_ENV' in os.environ:
 plugin_root_dir = vim.eval('s:plugin_root_dir')
 python_root_dir = normpath(join(plugin_root_dir, '..', 'python'))
 sys.path.insert(0, python_root_dir)
-import vim_mlflow
+
+import vim_mlflow  # this import must be after entering python env above
+mlflowmain = vim_mlflow.getMainPageMLflow(vim.eval('g:mlflow_tracking_uri'))
 EOF
 
 let g:vim_mlflow_plugin_loaded = 1
+let mlflowmain = py3eval('mlflowmain')
+return mlflowmain
+endfunction
