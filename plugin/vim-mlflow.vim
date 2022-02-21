@@ -17,7 +17,7 @@ import vim
 if 'VIRTUAL_ENV' in os.environ:
     project_base_dir = os.environ['VIRTUAL_ENV']
     activate_this = os.path.join(project_base_dir, 'bin/activate_this.py')
-    exec(open(activate_this).read(), {'__file__': activate_this})  # for python3
+    exec(open(activate_this).read(), {'__file__': activate_this})
 
 plugin_root_dir = vim.eval('s:plugin_root_dir')
 python_root_dir = normpath(join(plugin_root_dir, '..', 'python'))
