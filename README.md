@@ -24,7 +24,7 @@ on macos or `sudo apt install virtualenv` on Debian-based Linuxes.
 
 Then enter that environment and install the python dependencies:
 ```python
-source .venv/bin/activate   # on linux
+source .venv/bin/activate   # on linux or macos
 pip install mlflow
 ```
 
@@ -37,22 +37,20 @@ will be minimized or eliminated.  We'll get there!
 After installation, in future vim sessions to run vim-mlflow one must still
 first enter that python virtual environment before starting vim.
 
-When in vim, to open the MLflow page/connection, enter:
-```
-:call RunMLflow()
-```
+When in vim, to open the MLflow page/connection, enter `:call RunMLflow()`
 or use the equivalent hot-key which by default is `<leader>m`.
-The default MLFLOW_TRACKING_URI is "http://localhost:5000", but this can be
-set to whatever desired URI by setting `g:mlflow_tracking_uri` (in your
+
+The default MLFLOW_TRACKING_URI is `"http://localhost:5000"`, but this can
+be set to whatever desired URI by setting `g:mlflow_tracking_uri` (in your
 .vimrc file for example).
 
 A few other variables that may be of interest:
-`g:vim_mlflow_width` : sets the width of the vim-mlflow window.
+* `g:vim_mlflow_width` : sets the width of the vim-mlflow window.
 Element color customization (they have defaults based on arbitrary syntax highlighting colors):
-`g:vim_mlflow_color_titles`
-`g:vim_mlflow_color_divlines`
-`g:vim_mlflow_color_selectedexpt`
-`g:vim_mlflow_color_selectedrun`
+* `g:vim_mlflow_color_titles`
+* `g:vim_mlflow_color_divlines`
+* `g:vim_mlflow_color_selectedexpt`
+* `g:vim_mlflow_color_selectedrun`
 
 The next step is to add selection of elements in the experiment or run lists to
 auto-refresh the other lists/outputs as follows the respective quantities.
@@ -87,14 +85,11 @@ This plugin relies on vim being run in a python environment that has mlflow
 installed.
 
 Might be useful later:
+* https://stackoverflow.com/questions/4189239/vim-script-input-function-that-doesnt-require-user-to-hit-enter
 * https://github.com/jmcantrell/vim-virtualenv/blob/master/autoload/virtualenv.vim
 * https://stackoverflow.com/questions/3881534/set-python-virtualenv-in-vim
 * https://stevelosh.com/blog/2011/09/writing-vim-plugins
 * https://duseev.com/articles/vim-python-pipenv
-* https://blog.semanticart.com/2017/01/05/lets-write-a-basic-vim-plugin  <<--- instrumental
-* https://devhints.io/vimscript  <<--- instrumental
-* https://github.com/jceb/vim-orgmode
-   (note orgguide.txt linked in readme; near bottom of that page note
-    sections "Structure and Source Code", "Writing a plugin" (which is about
-    writing an OrgMode plugin, not vim plugin per se), "Keybindings", and
-    "Creating Tests Cases")
+* https://blog.semanticart.com/2017/01/05/lets-write-a-basic-vim-plugin
+* https://devhints.io/vimscript
+* https://github.com/jceb/vim-orgmode (note orgguide.txt linked in readme; go near bottom of that page)
