@@ -45,17 +45,18 @@ be set to whatever desired URI by setting `g:mlflow_tracking_uri` (in your
 .vimrc file for example).
 
 A few other variables that may be of interest:
-* `g:vim_mlflow_width` : sets the width of the vim-mlflow window.
-Element color customization (they have defaults based on arbitrary syntax highlighting colors):
-* `g:vim_mlflow_color_titles`
-* `g:vim_mlflow_color_divlines`
-* `g:vim_mlflow_color_selectedexpt`
-* `g:vim_mlflow_color_selectedrun`
+|           variable               |               description               |
+| -------------------------------- | --------------------------------------- |
+| `g:vim_mlflow_width`             | Sets the width of the vim-mlflow window |
+| `g:vim_mlflow_color_titles`      | Element color customization             |
+| `g:vim_mlflow_color_divlines`    | "                                       |
+| `g:vim_mlflow_color_selectedexpt`| "                                       |
+| `g:vim_mlflow_color_selectedrun` | "                                       |
 
-The next step is to add selection of elements in the experiment or run lists to
-auto-refresh the other lists/outputs as follows the respective quantities.
-Also, initialization is awfully slow, perhaps because of the python environment
-loading?  We'll look into options for that too.
+The next developmenet step (in progress) is to add selection of elements in
+the experiment or run lists to auto-refresh the other lists/outputs as follows
+the respective quantities.  Also, initialization is awfully slow, perhaps
+because of the python environment loading? We'll look into options for that too.
 
 
 
