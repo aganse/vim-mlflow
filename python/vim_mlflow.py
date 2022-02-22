@@ -16,7 +16,7 @@ def getMLflowExpts(mlflow_tracking_uri):
         output_lines.append("Experiments:")
         output_lines.append("------------")
         for expt in expts:
-            output_lines.append(f"{expt.experiment_id}:  {expt.name}")
+            output_lines.append(f"#{expt.experiment_id}:  {expt.name}")
         output_lines.append("")
         return output_lines, [expt.experiment_id for expt in expts]
 
@@ -37,7 +37,7 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
         for run in runs:
             st = datetime.utcfromtimestamp(run.start_time/1e3).strftime('%Y-%m-%d %H:%M:%S')
             #current_runid = run.run_id
-            output_lines.append(f"{run.run_id[:5]}: {st}")
+            output_lines.append(f"#{run.run_id[:5]}: {st}")
         output_lines.append("")
         return output_lines, [run.run_id for run in runs]
 
@@ -103,9 +103,18 @@ def getTagsListForRun(mlflow_tracking_uri, current_runid):
 
 
 def getMainPageMLflow(mlflow_tracking_uri):
+
+    try:
+        mlflow.set_tracking_uri(mlflow_tracking_uri)
+    except ConnectionRefusedError:
+        return f"Cannot connect to tracking uri {mlflow_tracking_uri}"
+
+
     current_exptid = vim.eval("s:current_exptid")
     current_runid = vim.eval("s:current_runid")
     out = [""]
+    out.append("\" Press ? for help")
+    out.append("")
     text, exptids = getMLflowExpts(mlflow_tracking_uri)
     out.extend(text)
     text, runids = getRunsListForExpt(mlflow_tracking_uri, current_exptid)

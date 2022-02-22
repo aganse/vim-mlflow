@@ -1,7 +1,9 @@
 let s:plugin_root_dir = fnamemodify(resolve(expand('<sfile>:p')), ':h')
 
 nnoremap <buffer> <localleader>m :call RunMLflow()<cr>
-let g:mlflow_tracking_uri = "http://localhost:5000"
+if ! exists('g:mlflow_tracking_uri')
+    let g:mlflow_tracking_uri = "http://localhost:5000"
+endif
 
 if !has("python3")
     echo "Error: vim must be compiled with +python3 to run the vim-mlflow plugin."
@@ -47,13 +49,18 @@ endfunction
 
 
 function! ColorizeMLflowBuffer()
-    call matchadd("pythonStatement", "Experiments:")
-    call matchadd("pythonStatement", "Runs in expt .*:")
-    call matchadd("pythonStatement", "Params in run .*:")
-    call matchadd("pythonStatement", "Metrics in run .*:")
-    call matchadd("pythonStatement", "Tags in run .*:")
-    call matchadd("pythonFunction", "------*")
-    call matchadd("pythonNumber", s:current_runid[0:4])
+    let g:vim_mlflow_color_titles = "pythonStatement"
+    let g:vim_mlflow_color_divlines = "pythonFunction"
+    let g:vim_mlflow_color_selectedexpt = "pythonString"
+    let g:vim_mlflow_color_selectedrun = "pythonNumber"
+    call matchadd(g:vim_mlflow_color_titles, "Experiments:")
+    call matchadd(g:vim_mlflow_color_titles, "Runs in expt .*:")
+    call matchadd(g:vim_mlflow_color_titles, "Params in run .*:")
+    call matchadd(g:vim_mlflow_color_titles, "Metrics in run .*:")
+    call matchadd(g:vim_mlflow_color_titles, "Tags in run .*:")
+    call matchadd(g:vim_mlflow_color_divlines, "------*")
+    call matchadd(g:vim_mlflow_color_selectedexpt, "\#".s:current_exptid."\:")
+    call matchadd(g:vim_mlflow_color_selectedrun, "\#".s:current_runid[0:4])
 endfunction
 
 
