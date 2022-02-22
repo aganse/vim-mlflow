@@ -40,24 +40,30 @@ first enter that python virtual environment before starting vim.
 When in vim, to open the MLflow page/connection, enter `:call RunMLflow()`
 or use the equivalent hot-key which by default is `<leader>m`.
 
-The default MLFLOW_TRACKING_URI is `"http://localhost:5000"`, but this can
-be set to whatever desired URI by setting `g:mlflow_tracking_uri` (in your
-.vimrc file for example).
-
-A few other variables that may be of interest:
+A few other variables that may be of interest to set in your .vimrc:
 |           variable               |               description               |
 | -------------------------------- | --------------------------------------- |
+| `g:mlflow_tracking_uri`          | The MLFLOW_TRACKING_URI of the MLflow tracking server to connect to (default is `"http://localhost:5000"`)|
 | `g:vim_mlflow_width`             | Sets the width of the vim-mlflow window |
 | `g:vim_mlflow_color_titles`      | Element color customization             |
 | `g:vim_mlflow_color_divlines`    | "                                       |
 | `g:vim_mlflow_color_selectedexpt`| "                                       |
 | `g:vim_mlflow_color_selectedrun` | "                                       |
 
-The next developmenet step (in progress) is to add selection of elements in
-the experiment or run lists to auto-refresh the other lists/outputs as follows
-the respective quantities.  Also, initialization is awfully slow, perhaps
-because of the python environment loading? We'll look into options for that too.
+In the current stage of development-in-progress, the vim-mlflow page only shows
+the contents of the first run in the first experiment, with no user input
+implemented yet.  The very next developmenet step in progress is adding
+selection of experiment and run entries their lists to auto-refresh the other
+lists/outputs as follows the respective quantities.
 
+Also, initialization is awfully slow, perhaps because of the python environment
+loading? Will look into options for that too. In fact MLFlow has a REST API
+equivalent to the Python API currently in use here.  I did not find any
+satisfying way of interfacing that REST API in native vim-script (which seems
+like would be faster/more-generalized/preferable) other than simply relying on
+other different external system dependencies (curl,etc) which seems no different
+than having the Python-based dependency implemented here (Python interprer being
+already compiled into vim itself).  Suggestions welcome as development continues.
 
 
 ## Acknowledgements plus misc refs that are useful in ongoing development
