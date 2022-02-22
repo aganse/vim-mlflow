@@ -104,18 +104,25 @@ def getTagsListForRun(mlflow_tracking_uri, current_runid):
 
 def getMainPageMLflow(mlflow_tracking_uri):
 
-    try:
-        mlflow.set_tracking_uri(mlflow_tracking_uri)
-    except ConnectionRefusedError:
-        return f"Cannot connect to tracking uri {mlflow_tracking_uri}"
-
-
     current_exptid = vim.eval("s:current_exptid")
     current_runid = vim.eval("s:current_runid")
     out = [""]
     out.append("\" Press ? for help")
     out.append("")
-    text, exptids = getMLflowExpts(mlflow_tracking_uri)
+    try:
+        text, exptids = getMLflowExpts(mlflow_tracking_uri)
+    except:
+        return [
+            "(Whew that mlflow internal",
+            "connection timeout feels long!)",
+            "",
+            "Connect error:",
+            "  cannot connect to",
+            f"  tracking uri {mlflow_tracking_uri}",
+            "",
+            "Is that the uri what you meant",
+            "to set in your .vimrc?"
+        ]
     out.extend(text)
     text, runids = getRunsListForExpt(mlflow_tracking_uri, current_exptid)
     out.extend(text)
