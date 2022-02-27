@@ -5,12 +5,28 @@ from mlflow.tracking import MlflowClient
 import vim
 
 
+def connectionMsg():
+    return [
+        "(Whew that mlflow internal",
+        "connection timeout feels long!)",
+        "",
+        "Connect error:",
+        "  cannot connect to",
+        f"  tracking uri {mlflow_tracking_uri}",
+        "",
+        "Is that the uri what you meant",
+        "to set in your .vimrc?"
+    ]
+
+
 def getMLflowExpts(mlflow_tracking_uri):
     try:
         mlflow.set_tracking_uri(mlflow_tracking_uri)
-        # print('MLFLOW tracking URI is', mlflow.get_tracking_uri())
 
-        expts = mlflow.list_experiments()
+        try:
+            expts = mlflow.list_experiments()
+        except:
+            return connectionMsg(), 'error'
 
         output_lines = []
         output_lines.append("Experiments:")
@@ -27,7 +43,6 @@ def getMLflowExpts(mlflow_tracking_uri):
 def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
     try:
         mlflow.set_tracking_uri(mlflow_tracking_uri)
-        # print('MLFLOW tracking URI is', mlflow.get_tracking_uri())
 
         runs = mlflow.list_run_infos(current_exptid, run_view_type=ViewType.ACTIVE_ONLY)  # ACTIVE_ONLY, DELETED_ONLY, or ALL
 
@@ -48,7 +63,6 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
 def getMetricsListForRun(mlflow_tracking_uri, current_runid):
     try:
         mlflow.set_tracking_uri(mlflow_tracking_uri)
-        # print('MLFLOW tracking URI is', mlflow.get_tracking_uri())
 
         run = mlflow.get_run(current_runid)
 
@@ -67,7 +81,6 @@ def getMetricsListForRun(mlflow_tracking_uri, current_runid):
 def getParamsListForRun(mlflow_tracking_uri, current_runid):
     try:
         mlflow.set_tracking_uri(mlflow_tracking_uri)
-        # print('MLFLOW tracking URI is', mlflow.get_tracking_uri())
 
         run = mlflow.get_run(current_runid)
 
@@ -86,7 +99,6 @@ def getParamsListForRun(mlflow_tracking_uri, current_runid):
 def getTagsListForRun(mlflow_tracking_uri, current_runid):
     try:
         mlflow.set_tracking_uri(mlflow_tracking_uri)
-        # print('MLFLOW tracking URI is', mlflow.get_tracking_uri())
 
         run = mlflow.get_run(current_runid)
 
@@ -104,40 +116,29 @@ def getTagsListForRun(mlflow_tracking_uri, current_runid):
 
 def getMainPageMLflow(mlflow_tracking_uri):
 
-    current_exptid = vim.eval("s:current_exptid")
-    current_runid = vim.eval("s:current_runid")
-    out = [""]
+    out = []
+    out.append("Vim-MLflow")
     out.append("\" Press ? for help")
     out.append("")
-    try:
-        text, exptids = getMLflowExpts(mlflow_tracking_uri)
-    except:
-        return [
-            "(Whew that mlflow internal",
-            "connection timeout feels long!)",
-            "",
-            "Connect error:",
-            "  cannot connect to",
-            f"  tracking uri {mlflow_tracking_uri}",
-            "",
-            "Is that the uri what you meant",
-            "to set in your .vimrc?"
-        ]
+    out.append("")
+    text, exptids = getMLflowExpts(mlflow_tracking_uri)
     out.extend(text)
-    text, runids = getRunsListForExpt(mlflow_tracking_uri, current_exptid)
+    out.append("")
+    if vim.eval("s:current_exptid") == "":
+        vim.command("let s:current_exptid='" + exptids[0] + "'")
+    text, runids = getRunsListForExpt(mlflow_tracking_uri, vim.eval("s:current_exptid"))
     out.extend(text)
-    out.extend(getParamsListForRun(mlflow_tracking_uri, current_runid))
-    out.extend(getMetricsListForRun(mlflow_tracking_uri, current_runid))
-    out.extend(getTagsListForRun(mlflow_tracking_uri, current_runid))
+    out.append("")
+    if runids:
+      if vim.eval("s:current_runid") == "":
+          vim.command("let s:current_runid='" + runids[0] + "'")
+      elif len(vim.eval("s:current_runid"))==5:
+          fullrunid = [runid for runid in runids if runid[:5]==vim.eval("s:current_runid")][0]
+          vim.command("let s:current_runid='" + fullrunid + "'")
+      if vim.eval("s:params_are_showing")=="1":
+        out.extend(getParamsListForRun(mlflow_tracking_uri, vim.eval("s:current_runid")))
+      if vim.eval("s:metrics_are_showing")=="1":
+        out.extend(getMetricsListForRun(mlflow_tracking_uri, vim.eval("s:current_runid")))
+      if vim.eval("s:tags_are_showing")=="1":
+        out.extend(getTagsListForRun(mlflow_tracking_uri, vim.eval("s:current_runid")))
     return out
-
-
-    # Extra snippets while i'm still developing...
-
-    #client = MlflowClient()
-    #exp_id = client.get_experiment_by_name("<experiment_id>").experiment_id
-    #runs = mlflow.search_runs("<experiment_id>", "metrics.r2 < 0.1")
-    #runs = mlflow.search_runs(None, "metrics.r2 < 0.1")
-    #print(exp_id)
-    #runs = mlflow.search_runs()
-    #print(runs)

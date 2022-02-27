@@ -50,20 +50,22 @@ A few other variables that may be of interest to set in your .vimrc:
 | `g:vim_mlflow_color_selectedexpt`| "                                       |
 | `g:vim_mlflow_color_selectedrun` | "                                       |
 
-In the current stage of development-in-progress, the vim-mlflow page only shows
-the contents of the first run in the first experiment, with no user input
-implemented yet.  The very next developmenet step in progress is adding
-selection of experiment and run entries their lists to auto-refresh the other
-lists/outputs as follows the respective quantities.
+The overall usage is to use the standard vim cursor-movement keys to move the
+cursor onto lines of experiments or runs, and pressing `o` or `enter` to select
+them.  Vim-mlflow requeries the MLflow server and updates the buffer accordingly.
+The help screen is accessed via pressing `?`, and will show other possibilities
+such as keys to toggle on/off various elements of the display, or to
+requery/refresh the display (say if a new run calculation was logged).
 
-Also, initialization is awfully slow, perhaps because of the python environment
-loading? Will look into options for that too. In fact MLFlow has a REST API
-equivalent to the Python API currently in use here.  I did not find any
-satisfying way of interfacing that REST API in native vim-script (which seems
-like would be faster/more-generalized/preferable) other than simply relying on
-other different external system dependencies (curl,etc) which seems no different
-than having the Python-based dependency implemented here (Python interprer being
-already compiled into vim itself).  Suggestions welcome as development continues.
+The first-time start of vim-mlflow seems a bit slow, perhaps because of the
+python environment loading, but it appears to be fine after that.
+MLFlow does have a REST API equivalent to the Python API currently in use here.
+However, I did not find any satisfying way of interfacing that REST API in
+native vim-script (which seems like would be faster/more-generalized/preferable)
+other than simply relying on other different external system dependencies
+(curl,etc) which seems no different than having the Python-based dependency
+implemented here (Python interprer being already compiled into vim itself).
+Suggestions welcome as development continues.
 
 
 ## Acknowledgements plus misc refs that are useful in ongoing development
@@ -83,13 +85,6 @@ With many thanks to:
   https://vimhelp.org/if_pyth.txt.html#python-vim
 * Alternative to execfile in Python 3, Stack Overflow, 2011 Jun 15 at
   https://stackoverflow.com/questions/6357361/alternative-to-execfile-in-python-3/6357418#6357418
-
-
-Add reference to this plugin into .vimrc file:
-Plugin 'file:///Users/aganse/Documents/src/python/vim-mlflow'
-
-This plugin relies on vim being run in a python environment that has mlflow
-installed.
 
 Might be useful later:
 * https://stackoverflow.com/questions/4189239/vim-script-input-function-that-doesnt-require-user-to-hit-enter
