@@ -28,6 +28,10 @@ function! RunMLflow()
   let s:params_are_showing = 1
   let s:metrics_are_showing = 1
   let s:tags_are_showing = 1
+  let s:expts_first_idx = 0
+  let g:vim_mlflow_expts_length = 8
+  let s:runs_first_idx = 0
+  let g:vim_mlflow_runs_length = 8
 
   if bufwinnr(l:name) == -1
       " Open a new split
@@ -109,8 +113,8 @@ function! ColorizeMLflowBuffer()
     let g:vim_mlflow_color_selectedexpt = 'pythonString'
     let g:vim_mlflow_color_selectedrun = 'pythonNumber'
     let g:vim_mlflow_color_help= 'pythonComment'
-    call matchadd(g:vim_mlflow_color_titles, 'Experiments:')
-    call matchadd(g:vim_mlflow_color_titles, 'Runs in expt .*:')
+    call matchadd(g:vim_mlflow_color_titles, '^.*Experiments:')
+    call matchadd(g:vim_mlflow_color_titles, '^.*Runs in expt .*:')
     call matchadd(g:vim_mlflow_color_titles, 'Params in run .*:')
     call matchadd(g:vim_mlflow_color_titles, 'Metrics in run .*:')
     call matchadd(g:vim_mlflow_color_titles, 'Tags in run .*:')
@@ -163,6 +167,9 @@ function! ListHelpMsg()
     \'" o :  enter expt or run under cursor',
     \'" <enter> :   "    "    "',
     \'" r :  requery MLflow display',
+    \'" A :  cycle Active/Deleted/All view',
+    \'" N :  scroll down list under cursor',
+    \'" P :  scroll up list under cursor',
     \'" p :  toggle display of parameters',
     \'" m :  toggle display of metrics',
     \'" t :  toggle display of tags',

@@ -2,10 +2,11 @@ from datetime import datetime
 import mlflow
 from mlflow.entities import ViewType
 from mlflow.tracking import MlflowClient
+import pandas as pd
 import vim
 
 
-def connectionMsg():
+def connectionMsg(mlflow_tracking_uri):
     return [
         "(Whew that mlflow internal",
         "connection timeout feels long!)",
@@ -26,12 +27,16 @@ def getMLflowExpts(mlflow_tracking_uri):
         try:
             expts = mlflow.list_experiments()
         except:
-            return connectionMsg(), 'error'
+            return connectionMsg(mlflow_tracking_uri), 'error'
 
+        vim.command("let s:num_expts='" + str(len(expts)) + "'")
         output_lines = []
-        output_lines.append("Experiments:")
+        output_lines.append(f"{vim.eval('s:num_expts')} Experiments:")
         output_lines.append("------------")
-        for expt in expts:
+        expts = sorted(expts, key=lambda e: int(e.experiment_id))
+        beginexpt_idx = int(vim.eval("s:expts_first_idx"))
+        endexpt_idx = int(vim.eval("s:expts_first_idx"))+int(vim.eval("g:vim_mlflow_expts_length"))
+        for expt in expts[beginexpt_idx: endexpt_idx]:
             output_lines.append(f"#{expt.experiment_id}:  {expt.name}")
         output_lines.append("")
         return output_lines, [expt.experiment_id for expt in expts]
@@ -46,10 +51,14 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
 
         runs = mlflow.list_run_infos(current_exptid, run_view_type=ViewType.ACTIVE_ONLY)  # ACTIVE_ONLY, DELETED_ONLY, or ALL
 
+        vim.command("let s:num_runs='" + str(len(runs)) + "'")
         output_lines = []
-        output_lines.append(f"Runs in expt #{current_exptid}:")
+        output_lines.append(f"{vim.eval('s:num_runs')} Runs in expt #{current_exptid}:")
         output_lines.append("------------------")
-        for run in runs:
+        runs = sorted(runs, key=lambda r: r.start_time)
+        beginrun_idx = int(vim.eval("s:runs_first_idx"))
+        endrun_idx = int(vim.eval("s:runs_first_idx"))+int(vim.eval("g:vim_mlflow_runs_length"))
+        for run in runs[beginrun_idx: endrun_idx]:
             st = datetime.utcfromtimestamp(run.start_time/1e3).strftime('%Y-%m-%d %H:%M:%S')
             #current_runid = run.run_id
             output_lines.append(f"#{run.run_id[:5]}: {st}")
