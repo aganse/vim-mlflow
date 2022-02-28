@@ -1,8 +1,9 @@
 from datetime import datetime
+from urllib.request import urlopen, Request
+
 import mlflow
 from mlflow.entities import ViewType
-from mlflow.tracking import MlflowClient
-import pandas as pd
+# import pandas as pd
 import vim
 
 
@@ -130,24 +131,51 @@ def getMainPageMLflow(mlflow_tracking_uri):
     out.append("\" Press ? for help")
     out.append("")
     out.append("")
-    text, exptids = getMLflowExpts(mlflow_tracking_uri)
-    out.extend(text)
-    out.append("")
-    if vim.eval("s:current_exptid") == "":
-        vim.command("let s:current_exptid='" + exptids[0] + "'")
-    text, runids = getRunsListForExpt(mlflow_tracking_uri, vim.eval("s:current_exptid"))
-    out.extend(text)
-    out.append("")
-    if runids:
-      if vim.eval("s:current_runid") == "":
-          vim.command("let s:current_runid='" + runids[0] + "'")
-      elif len(vim.eval("s:current_runid"))==5:
-          fullrunid = [runid for runid in runids if runid[:5]==vim.eval("s:current_runid")][0]
-          vim.command("let s:current_runid='" + fullrunid + "'")
-      if vim.eval("s:params_are_showing")=="1":
-        out.extend(getParamsListForRun(mlflow_tracking_uri, vim.eval("s:current_runid")))
-      if vim.eval("s:metrics_are_showing")=="1":
-        out.extend(getMetricsListForRun(mlflow_tracking_uri, vim.eval("s:current_runid")))
-      if vim.eval("s:tags_are_showing")=="1":
-        out.extend(getTagsListForRun(mlflow_tracking_uri, vim.eval("s:current_runid")))
+    if verifyTrackingUrl(mlflow_tracking_uri, timeout=vim.eval("g:vim_mlflow_timeout")):
+        text, exptids = getMLflowExpts(mlflow_tracking_uri)
+        out.extend(text)
+        out.append("")
+        if vim.eval("s:current_exptid") == "":
+            vim.command("let s:current_exptid='" + exptids[0] + "'")
+        text, runids = getRunsListForExpt(mlflow_tracking_uri, vim.eval("s:current_exptid"))
+        out.extend(text)
+        out.append("")
+        if runids:
+            if vim.eval("s:current_runid") == "":
+                vim.command("let s:current_runid='" + runids[0] + "'")
+            elif len(vim.eval("s:current_runid"))==5:
+                fullrunid = [runid for runid in runids if runid[:5]==vim.eval("s:current_runid")][0]
+                vim.command("let s:current_runid='" + fullrunid + "'")
+            if vim.eval("s:params_are_showing")=="1":
+              out.extend(getParamsListForRun(mlflow_tracking_uri, vim.eval("s:current_runid")))
+            if vim.eval("s:metrics_are_showing")=="1":
+              out.extend(getMetricsListForRun(mlflow_tracking_uri, vim.eval("s:current_runid")))
+            if vim.eval("s:tags_are_showing")=="1":
+              out.extend(getTagsListForRun(mlflow_tracking_uri, vim.eval("s:current_runid")))
+    else:
+        out.append("Could not connect to mlflow_tracking_uri")
+        out.append(mlflow_tracking_uri)
+        out.append(f"within the g:vim_mlflow_timeout={float(vim.eval('g:vim_mlflow_timeout')):.2f}")
+        out.append("Are you sure that's the right URI?")
+    return out
+
+
+def verifyTrackingUrl(url, timeout=1):
+    """with thanks to
+    https://dev.to/bowmanjd/http-calls-in-python-without-requests-or-other-external-dependencies-5aj1
+    """
+
+
+    if not url.startswith("http"):
+        raise RuntimeError("Incorrect and possibly insecure protocol in url")
+
+    httprequest = Request(url, headers={"Accept": "application/json"})
+
+    try:
+        with urlopen(httprequest, timeout=timeout) as response:
+            if response.status > 0:
+                out = True
+    except:
+        out = False
+
     return out

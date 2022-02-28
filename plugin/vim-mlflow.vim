@@ -21,6 +21,7 @@ function! RunMLflow()
   " Set variables defining default/startup behavior
   let l:name = '__MLflow__'
   let g:vim_mlflow_width = 40
+  let g:vim_mlflow_timeout = 20.5  " seconds
   let s:help_msg_is_showing = 0
   let s:current_exptid = ''  " empty string means show '1st expt'
   let s:current_runid = ''   " empty string means show '1st run'
