@@ -30,9 +30,10 @@ function! RunMLflow()
   let s:metrics_are_showing = 1
   let s:tags_are_showing = 1
   let s:expts_first_idx = 0
-  let g:vim_mlflow_expts_length = 8
   let s:runs_first_idx = 0
+  let g:vim_mlflow_expts_length = 8
   let g:vim_mlflow_runs_length = 8
+  let g:vim_mlflow_viewtype = 1  " 1:activeonly, 2:deletedonly, 3:all
 
   if bufwinnr(l:name) == -1
       " Open a new split
@@ -59,6 +60,9 @@ function! RunMLflow()
   nmap <buffer>  p    :call ToggleParamsDisplay()<CR>
   nmap <buffer>  m    :call ToggleMetricsDisplay()<CR>
   nmap <buffer>  t    :call ToggleTagsDisplay()<CR>
+  nmap <buffer>  A    :call CycleActiveDeletedAll()<CR>
+  nmap <buffer>  N    :call ScrollExptRunDown()<CR>
+  nmap <buffer>  P    :call ScrollExptRunUp()<CR>
 
 endfunction
 
@@ -95,8 +99,10 @@ function! RefreshMLflowBuffer()
   normal! gg"_dG
 
   " Insert the results.
+  let l:view = winsaveview()
   let l:results = MainPageMLflow()
   call append(0, l:results)
+  call winrestview(l:view)
 
   " Colorize the contents
   call ColorizeMLflowBuffer()
@@ -127,6 +133,23 @@ function! ColorizeMLflowBuffer()
     endif
     let s:expt_hi = matchadd(g:vim_mlflow_color_selectedexpt, '\#'.s:current_exptid.'\:')
     let s:run_hi = matchadd(g:vim_mlflow_color_selectedrun, '\#'.s:current_runid[0:4].'\:')
+endfunction
+
+
+function! CycleActiveDeletedAll()
+    " cycle over values 1-3 (noting that % outputs 0-2):
+    let g:vim_mlflow_viewtype = (g:vim_mlflow_viewtype%3)+1
+    call RefreshMLflowBuffer()
+endfunction
+
+
+function! ScrollExptRunDown()
+    let l:curpos = getpos('.')
+endfunction
+
+
+function! ScrollExptRunUp()
+    let l:curpos = getpos('.')
 endfunction
 
 
