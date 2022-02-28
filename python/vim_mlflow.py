@@ -7,28 +7,11 @@ from mlflow.entities import ViewType
 import vim
 
 
-def connectionMsg(mlflow_tracking_uri):
-    return [
-        "(Whew that mlflow internal",
-        "connection timeout feels long!)",
-        "",
-        "Connect error:",
-        "  cannot connect to",
-        f"  tracking uri {mlflow_tracking_uri}",
-        "",
-        "Is that the uri what you meant",
-        "to set in your .vimrc?"
-    ]
-
-
 def getMLflowExpts(mlflow_tracking_uri):
     try:
         mlflow.set_tracking_uri(mlflow_tracking_uri)
 
-        try:
-            expts = mlflow.list_experiments()
-        except:
-            return connectionMsg(mlflow_tracking_uri), 'error'
+        expts = mlflow.list_experiments()
 
         vim.command("let s:num_expts='" + str(len(expts)) + "'")
         output_lines = []
@@ -131,7 +114,7 @@ def getMainPageMLflow(mlflow_tracking_uri):
     out.append("\" Press ? for help")
     out.append("")
     out.append("")
-    if verifyTrackingUrl(mlflow_tracking_uri, timeout=vim.eval("g:vim_mlflow_timeout")):
+    if verifyTrackingUrl(mlflow_tracking_uri, timeout=float(vim.eval("g:vim_mlflow_timeout"))):
         text, exptids = getMLflowExpts(mlflow_tracking_uri)
         out.extend(text)
         out.append("")
@@ -160,21 +143,21 @@ def getMainPageMLflow(mlflow_tracking_uri):
     return out
 
 
-def verifyTrackingUrl(url, timeout=1):
-    """with thanks to
-    https://dev.to/bowmanjd/http-calls-in-python-without-requests-or-other-external-dependencies-5aj1
+def verifyTrackingUrl(url, timeout=1.0):
+    """Check that the MLflow URL is running/accessible.  However this is a
+    special-case usage, only valid if the mlflow_tracking_uri is an http
+    URL.  Ultimately the point is really to see if the mlflow tracking server
+    is responding, much faster than the harwired 1-minute timeout built-in
+    to the MLflow python API.  This works for me for now, but we want something
+    more general in future.
     """
-
 
     if not url.startswith("http"):
         raise RuntimeError("Incorrect and possibly insecure protocol in url")
 
-    httprequest = Request(url, headers={"Accept": "application/json"})
-
     try:
-        with urlopen(httprequest, timeout=timeout) as response:
-            if response.status > 0:
-                out = True
+        if urlopen(url, timeout=timeout).getcode()==200:
+            out = True
     except:
         out = False
 
