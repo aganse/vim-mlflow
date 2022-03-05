@@ -45,14 +45,11 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
         lifecycles = {"active": "A", "deleted": "D"}
         viewtype = [" Active", " Deleted", ""]
 
-        # viewtypes = [ViewType.ACTIVE_ONLY, ViewType.DELETED_ONLY, ViewType.ALL]
-        # viewtype = viewtypes[vim.eval("g:vim_mlflow_viewtype")]
         runs = mlflow.list_run_infos(current_exptid, run_view_type=int(vim.eval("g:vim_mlflow_viewtype")))
 
         output_lines = []
         num_runs_viewtype = len([run for run in runs if LifecycleStage.matches_view_type(int(vim.eval("g:vim_mlflow_viewtype")), run.lifecycle_stage)])
         vim.command("let s:num_runs='" + str(num_runs_viewtype) + "'")
-        # output_lines.append(f"{vim.eval('s:num_runs')} Runs in expt #{current_exptid}:")
         if int(vim.eval('g:vim_mlflow_viewtype'))==ViewType.ALL:
             output_lines.append(f"{vim.eval('s:num_runs')} Runs in expt #{current_exptid}:")
         else:

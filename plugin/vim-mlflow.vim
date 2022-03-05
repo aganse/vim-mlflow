@@ -49,20 +49,22 @@ function! RunMLflow()
   set buftype=nofile
 
   " Initial query/draw of MLflow content
-  call RefreshMLflowBuffer()
+  call RefreshMLflowBuffer(1)
   normal! 1G
 
   " Map certain key input to vim-mlflow features within buffer
-  nmap <buffer>  ?    :call ListHelpMsg()<CR>
-  nmap <buffer>  <CR> :call RefreshMLflowBuffer()<CR>
-  nmap <buffer>  o    :call RefreshMLflowBuffer()<CR>
-  nmap <buffer>  r    :call RefreshMLflowBuffer()<CR>
-  nmap <buffer>  p    :call ToggleParamsDisplay()<CR>
-  nmap <buffer>  m    :call ToggleMetricsDisplay()<CR>
-  nmap <buffer>  t    :call ToggleTagsDisplay()<CR>
-  nmap <buffer>  A    :call CycleActiveDeletedAll()<CR>
-  nmap <buffer>  N    :call ScrollExptRunDown()<CR>
-  nmap <buffer>  P    :call ScrollExptRunUp()<CR>
+  nmap <buffer>  ?     :call ListHelpMsg()<CR>
+  nmap <buffer>  <CR>  :call RefreshMLflowBuffer(1)<CR>
+  nmap <buffer>  o     :call RefreshMLflowBuffer(1)<CR>
+  nmap <buffer>  r     :call RefreshMLflowBuffer(0)<CR>
+  nmap <buffer>  <C-p> :call ToggleParamsDisplay()<CR>
+  nmap <buffer>  <C-m> :call ToggleMetricsDisplay()<CR>
+  nmap <buffer>  <C-t> :call ToggleTagsDisplay()<CR>
+  nmap <buffer>  A     :call CycleActiveDeletedAll()<CR>
+  nmap <buffer>  n     :call ScrollListDown()<CR>
+  nmap <buffer>  p     :call ScrollListUp()<CR>
+  nmap <buffer>  N     :call ScrollListBtm()<CR>
+  nmap <buffer>  P     :call ScrollListTop()<CR>
 
 endfunction
 
@@ -79,6 +81,7 @@ function! AssignExptRunFromCurpos(curpos)
   if l:expt != ''
     let s:current_exptid = l:expt
     let s:current_runid = ''
+    let s:runs_first_idx = 0
   endif
   if l:run != ''
     let s:current_runid = l:run
@@ -88,12 +91,17 @@ endfunction
 
 
 " Requery MLflow content and update buffer
-function! RefreshMLflowBuffer()
+function! RefreshMLflowBuffer(doassign, ...)
   " let wordUnderCursor = expand("<cword>")  " useful later
-  let l:curpos = getpos('.')
+  let l:curpos = get(a:, 1)
+  if ! exists(l:curpos)
+    let l:curpos = getpos('.')
+  endif
 
   " Update current expt or run if specified in input arg
-  call AssignExptRunFromCurpos(l:curpos)
+  if a:doassign
+    call AssignExptRunFromCurpos(l:curpos)
+  endif
 
   " Clear out existing content
   normal! gg"_dG
@@ -137,19 +145,80 @@ endfunction
 
 
 function! CycleActiveDeletedAll()
-    " cycle over values 1-3 (noting that % outputs 0-2):
+    " Cycle over values 1-3 (noting that % outputs 0-2)
+    " which correspond to states Active, Deleted, and All
+    " for both Experiments and Runs simultaneously:
     let g:vim_mlflow_viewtype = (g:vim_mlflow_viewtype%3)+1
-    call RefreshMLflowBuffer()
+    call RefreshMLflowBuffer(1)
 endfunction
 
 
-function! ScrollExptRunDown()
+function! ScrollListDown()
+    let l:top_to_expts = 6
+    let l:expts_to_runs = 4
     let l:curpos = getpos('.')
+    if l:curpos[1]>l:top_to_expts &&
+     \ l:curpos[1]<=l:top_to_expts+g:vim_mlflow_expts_length &&
+     \ s:expts_first_idx < s:num_expts-1
+        let s:expts_first_idx = s:expts_first_idx + 1  "v:count1
+    elseif l:curpos[1]>l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs &&
+     \     l:curpos[1]<=l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs+g:vim_mlflow_expts_length &&
+     \     s:runs_first_idx < s:num_runs-1
+        let s:runs_first_idx = s:runs_first_idx + 1  "v:count1
+    endif
+    call RefreshMLflowBuffer(0)
 endfunction
 
 
-function! ScrollExptRunUp()
+function! ScrollListUp()
+    let l:top_to_expts = 6
+    let l:expts_to_runs = 4
     let l:curpos = getpos('.')
+    if l:curpos[1]>l:top_to_expts &&
+     \ l:curpos[1]<=l:top_to_expts+g:vim_mlflow_expts_length &&
+     \ s:expts_first_idx > 0
+        let s:expts_first_idx = s:expts_first_idx - 1  "v:count1
+    elseif l:curpos[1]>l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs &&
+     \     l:curpos[1]<=l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs+g:vim_mlflow_expts_length &&
+     \     s:runs_first_idx > 0
+        let s:runs_first_idx = s:runs_first_idx - 1  "v:count1
+    endif
+    call RefreshMLflowBuffer(0)
+endfunction
+
+
+function! ScrollListBtm()
+    let l:top_to_expts = 6
+    let l:expts_to_runs = 4
+    let l:curpos = getpos('.')
+    if l:curpos[1]>l:top_to_expts &&
+     \ l:curpos[1]<=l:top_to_expts+g:vim_mlflow_expts_length &&
+     \ s:expts_first_idx < s:num_expts-1
+        let s:expts_first_idx = max([0, s:num_expts-g:vim_mlflow_expts_length])
+    elseif l:curpos[1]>l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs &&
+     \     l:curpos[1]<=l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs+g:vim_mlflow_expts_length &&
+     \     s:runs_first_idx < s:num_runs-1
+        "let s:runs_first_idx = s:num_runs-1
+        let s:runs_first_idx = max([0, s:num_runs-g:vim_mlflow_runs_length])
+    endif
+    call RefreshMLflowBuffer(0)
+endfunction
+
+
+function! ScrollListTop()
+    let l:top_to_expts = 6
+    let l:expts_to_runs = 4
+    let l:curpos = getpos('.')
+    if l:curpos[1]>l:top_to_expts &&
+     \ l:curpos[1]<=l:top_to_expts+g:vim_mlflow_expts_length &&
+     \ s:expts_first_idx > 0
+        let s:expts_first_idx = 0
+    elseif l:curpos[1]>l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs &&
+     \     l:curpos[1]<=l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs+g:vim_mlflow_expts_length &&
+     \     s:runs_first_idx > 0
+        let s:runs_first_idx = 0
+    endif
+    call RefreshMLflowBuffer(0)
 endfunction
 
 
@@ -159,7 +228,7 @@ function! ToggleParamsDisplay()
   else
     let s:params_are_showing = 0
   endif
-  call RefreshMLflowBuffer()
+  call RefreshMLflowBuffer(1)
 endfunction
 
 
@@ -169,7 +238,7 @@ function! ToggleMetricsDisplay()
   else
     let s:metrics_are_showing = 0
   endif
-  call RefreshMLflowBuffer()
+  call RefreshMLflowBuffer(1)
 endfunction
 
 
@@ -179,7 +248,7 @@ function! ToggleTagsDisplay()
   else
     let s:tags_are_showing = 0
   endif
-  call RefreshMLflowBuffer()
+  call RefreshMLflowBuffer(1)
 endfunction
 
 
@@ -187,16 +256,18 @@ function! ListHelpMsg()
   let l:helptext = [
     \'Vim-MLflow',
     \'" ------------------------',
-    \'" ? :  toggle help listing',
-    \'" o :  enter expt or run under cursor',
+    \'" ?  :  toggle help listing',
+    \'" o  :  enter expt or run under cursor',
     \'" <enter> :   "    "    "',
-    \'" r :  requery MLflow display',
-    \'" A :  cycle Active/Deleted/All view',
-    \'" N :  scroll down list under cursor',
-    \'" P :  scroll up list under cursor',
-    \'" p :  toggle display of parameters',
-    \'" m :  toggle display of metrics',
-    \'" t :  toggle display of tags',
+    \'" r  :  requery MLflow display',
+    \'" A  :  cycle Active/Deleted/All view',
+    \'" n  :  scroll down list under cursor',
+    \'" p  :  scroll up list under cursor',
+    \'" N  :  scroll to bottom of list',
+    \'" P  :  scroll to top of list',
+    \'" ^p :  toggle display of parameters',
+    \'" ^m :  toggle display of metrics',
+    \'" ^t :  toggle display of tags',
     \'" ------------------------',
     \'" Press ? to remove help',
     \]
