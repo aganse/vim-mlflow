@@ -1,23 +1,43 @@
 let s:plugin_root_dir = fnamemodify(resolve(expand('<sfile>:p')), ':h')
-
 if !has('python3')
     echo 'Error: vim must be compiled with +python3 to run the vim-mlflow plugin.'
     finish
 endif
-
 " Only load vim-mlflow plugin once
 if exists('g:vim_mlflow_plugin_loaded')
     finish
 endif
-
 nnoremap <buffer> <localleader>m :call RunMLflow()<cr>
-if ! exists('g:mlflow_tracking_uri')
-    let g:mlflow_tracking_uri = 'http://localhost:5000'
-endif
+
+
+function! SetDefaults()
+    " Set the defaults for all the user-specifiable options
+    let g:mlflow_tracking_uri = get(g:, 'mlflow_tracking_uri', 'http://localhost:5000')
+    let g:vim_mlflow_timeout = get(g:, 'vim_mlflow_timeout', 0.5)  " seconds
+    let g:vim_mlflow_buffername = get(g:, 'vim_mlflow_buffername', '__MLflow__')
+    let g:vim_mlflow_vside = get(g:, 'vim_mlflow_vside', 'left')  " 'left' or 'right'
+    let g:vim_mlflow_width = get(g:, 'vim_mlflow_width', 40)
+    let g:vim_mlflow_expts_length = get(g:, 'vim_mlflow_expts_length', 8)
+    let g:vim_mlflow_runs_length = get(g:, 'vim_mlflow_runs_length', 8)
+    let g:vim_mlflow_viewtype = get(g:, 'vim_mlflow_viewtype', 1)  " 1:activeonly, 2:deletedonly, 3:all
+    let g:vim_mlflow_show_scrollicons = get(g:, 'vim_mlflow_show_scrollicons', 1)
+    let g:vim_mlflow_icon_useunicode = get(g:, 'vim_mlflow_icon_useunicode', 0)
+    if g:vim_mlflow_icon_useunicode 
+        let g:vim_mlflow_icon_vdivider = get(g:, 'vim_mlflow_icon_vdivider', '─')
+        let g:vim_mlflow_icon_scrollstop = get(g:, 'vim_mlflow_icon_scrollstop', '▰')
+        let g:vim_mlflow_icon_scrollup = get(g:, 'vim_mlflow_icon_scrollup', '▲')
+        let g:vim_mlflow_icon_scrolldown = get(g:, 'vim_mlflow_icon_scrolldown', '▼')
+    else
+        let g:vim_mlflow_icon_vdivider = get(g:, 'vim_mlflow_icon_vdivider', '-')
+        let g:vim_mlflow_icon_scrollstop = get(g:, 'vim_mlflow_icon_scrollstop', '')
+        let g:vim_mlflow_icon_scrollup = get(g:, 'vim_mlflow_icon_scrollup', '^')
+        let g:vim_mlflow_icon_scrolldown = get(g:, 'vim_mlflow_icon_scrolldown', 'v')
+    endif
+
+endfunction
 
 
 function! RunMLflow()
-
     " Set variables defining default/startup behavior
     let s:current_exptid = ''  " empty string means show '1st expt'
     let s:current_runid = ''   " empty string means show '1st run'
@@ -29,25 +49,8 @@ function! RunMLflow()
     let s:metrics_are_showing = 1
     let s:tags_are_showing = 1
   
-    let g:vim_mlflow_timeout = 0.5  " seconds
-    let g:vim_mlflow_buffername = '__MLflow__'
-    let g:vim_mlflow_vside = 'left'  " 'left' or 'right'
-    let g:vim_mlflow_width = 40
-    let g:vim_mlflow_expts_length = 8
-    let g:vim_mlflow_runs_length = 8
-    let g:vim_mlflow_viewtype = 1  " 1:activeonly, 2:deletedonly, 3:all
-    let g:vim_mlflow_show_scrollicons = 1
-    let g:vim_mlflow_icon_vdivider = '-'
-    let g:vim_mlflow_icon_scrollstop = ''
-    let g:vim_mlflow_icon_scrollup = '^'
-    let g:vim_mlflow_icon_scrolldown = 'v'
-    let g:vim_mlflow_icon_useunicode = 0
-    if g:vim_mlflow_icon_useunicode 
-        let g:vim_mlflow_icon_vdivider = '─'
-        let g:vim_mlflow_icon_scrollstop = '▰'
-        let g:vim_mlflow_icon_scrollup = '▲'
-        let g:vim_mlflow_icon_scrolldown = '▼'
-    endif
+    " Set the defaults for all the user-specifiable options
+    call SetDefaults()
   
     if bufwinnr(g:vim_mlflow_buffername) == -1
         " Open a new split on specified side
@@ -321,7 +324,6 @@ endfunction
 
 
 function! MainPageMLflow()
-
 python3 << EOF
 import os, sys
 from os.path import normpath, join
