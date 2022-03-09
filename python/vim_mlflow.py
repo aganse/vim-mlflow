@@ -27,7 +27,7 @@ def getMLflowExpts(mlflow_tracking_uri):
         else:
             scrollicon = ""
         output_lines.append(scrollicon + vim.eval("g:vim_mlflow_icon_vdivider")*30)
-        expts = sorted(expts, key=lambda e: int(e.experiment_id))
+        expts = sorted(expts, key=lambda e: int(e.experiment_id), reverse=True)
         beginexpt_idx = int(vim.eval("s:expts_first_idx"))
         endexpt_idx = int(vim.eval("s:expts_first_idx"))+int(vim.eval("g:vim_mlflow_expts_length"))
         for expt in expts[beginexpt_idx: endexpt_idx]:
@@ -45,7 +45,6 @@ def getMLflowExpts(mlflow_tracking_uri):
         else:
             scrollicon = ""
         output_lines.append(scrollicon)
-        #output_lines.append(scrollicon + "----")
         return output_lines, [expt.experiment_id for expt in expts]
 
     except ModuleNotFoundError:
@@ -72,16 +71,24 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
         else:
             scrollicon = ""
         output_lines.append(scrollicon + vim.eval("g:vim_mlflow_icon_vdivider")*30)
-        runs = sorted(runs, key=lambda r: r.start_time)
+        runs = sorted(runs, key=lambda r: r.start_time, reverse=True)
         beginrun_idx = int(vim.eval("s:runs_first_idx"))
         endrun_idx = int(vim.eval("s:runs_first_idx"))+int(vim.eval("g:vim_mlflow_runs_length"))
         for run in runs[beginrun_idx: endrun_idx]:
             st = datetime.utcfromtimestamp(run.start_time/1e3).strftime('%Y-%m-%d %H:%M:%S')
             if LifecycleStage.matches_view_type(int(vim.eval("g:vim_mlflow_viewtype")), run.lifecycle_stage):
-                if int(vim.eval('g:vim_mlflow_viewtype'))==ViewType.ALL:
-                    output_lines.append(f"#{run.run_id[:5]}: {lifecycles[run.lifecycle_stage]} {st}")
+                mark = " "
+                if run.run_id[:5] in vim.eval("s:markruns_list"):
+                    mark = vim.eval("g:vim_mlflow_icon_markrun")
+                runtags = mlflow.get_run(run.run_id).data.tags
+                if "mlflow.runName" in runtags:
+                    runname = mlflow.get_run(run.run_id).data.tags["mlflow.runName"]
                 else:
-                    output_lines.append(f"#{run.run_id[:5]}: {st}")
+                    runname = ""
+                if int(vim.eval('g:vim_mlflow_viewtype'))==ViewType.ALL:
+                    output_lines.append(f"{mark}#{run.run_id[:5]}: {lifecycles[run.lifecycle_stage]} {st}  {runname}")
+                else:
+                    output_lines.append(f"{mark}#{run.run_id[:5]}: {st}  {runname}")
         if vim.eval("g:vim_mlflow_show_scrollicons"):
             if int(vim.eval("s:runs_first_idx")) == \
                int(vim.eval("s:num_runs-min([g:vim_mlflow_runs_length, s:num_runs])")):
@@ -91,7 +98,6 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
         else:
             scrollicon = ""
         output_lines.append(scrollicon)
-        #output_lines.append(scrollicon + "----")
         return output_lines, [run.run_id for run in runs]
 
     except ModuleNotFoundError:

@@ -27,11 +27,13 @@ function! SetDefaults()
         let g:vim_mlflow_icon_scrollstop = get(g:, 'vim_mlflow_icon_scrollstop', '▰')
         let g:vim_mlflow_icon_scrollup = get(g:, 'vim_mlflow_icon_scrollup', '▲')
         let g:vim_mlflow_icon_scrolldown = get(g:, 'vim_mlflow_icon_scrolldown', '▼')
+        let g:vim_mlflow_icon_markrun = get(g:, 'vim_mlflow_icon_markrun', '▶')
     else
         let g:vim_mlflow_icon_vdivider = get(g:, 'vim_mlflow_icon_vdivider', '-')
         let g:vim_mlflow_icon_scrollstop = get(g:, 'vim_mlflow_icon_scrollstop', '')
         let g:vim_mlflow_icon_scrollup = get(g:, 'vim_mlflow_icon_scrollup', '^')
         let g:vim_mlflow_icon_scrolldown = get(g:, 'vim_mlflow_icon_scrolldown', 'v')
+        let g:vim_mlflow_icon_markrun = get(g:, 'vim_mlflow_icon_markrun', '>')
     endif
 
 endfunction
@@ -48,6 +50,7 @@ function! RunMLflow()
     let s:params_are_showing = 1
     let s:metrics_are_showing = 1
     let s:tags_are_showing = 1
+    let s:markruns_list = []
   
     " Set the defaults for all the user-specifiable options
     call SetDefaults()
@@ -78,6 +81,7 @@ function! RunMLflow()
     " Map certain key input to vim-mlflow features within buffer
     nmap <buffer>  ?     :call ListHelpMsg()<CR>
     nmap <buffer>  <CR>  :call RefreshMLflowBuffer(1)<CR>
+    nmap <buffer>  <space>  :call MarkRun()<CR>
     nmap <buffer>  o     :call RefreshMLflowBuffer(1)<CR>
     nmap <buffer>  r     :call RefreshMLflowBuffer(0)<CR>
     nmap <buffer>  <C-p> :call ToggleParamsDisplay()<CR>
@@ -152,6 +156,7 @@ function! ColorizeMLflowBuffer()
     let g:vim_mlflow_color_selectedexpt = 'pythonString'
     let g:vim_mlflow_color_selectedrun = 'pythonNumber'
     let g:vim_mlflow_color_help= 'pythonComment'
+    let g:vim_mlflow_color_markrun= 'pythonStatement'
     call matchadd(g:vim_mlflow_color_titles, '^.*Experiments:')
     call matchadd(g:vim_mlflow_color_titles, '^.*Runs in expt .*:')
     call matchadd(g:vim_mlflow_color_titles, 'Params in run .*:')
@@ -166,6 +171,7 @@ function! ColorizeMLflowBuffer()
     call matchadd(g:vim_mlflow_color_scrollicons, '^'.g:vim_mlflow_icon_scrollup)
     call matchadd(g:vim_mlflow_color_scrollicons, '^'.g:vim_mlflow_icon_scrolldown)
     call matchadd(g:vim_mlflow_color_help, '^".*')
+    call matchadd(g:vim_mlflow_color_markrun, '^'.g:vim_mlflow_icon_markrun.'.*$')
     if s:expt_hi != ''
         call matchdelete(s:expt_hi)
         call matchdelete(s:run_hi)
@@ -181,6 +187,28 @@ function! CycleActiveDeletedAll()
     " for both Experiments and Runs simultaneously:
     let g:vim_mlflow_viewtype = (g:vim_mlflow_viewtype%3)+1
     call RefreshMLflowBuffer(1)
+endfunction
+
+
+function! MarkRun()
+    let l:top_to_expts = 6
+    let l:expts_to_runs = 4
+    let l:curpos = getpos('.')
+    let s:actual_expts_length = min([g:vim_mlflow_expts_length, s:num_expts])
+    let s:actual_runs_length = min([g:vim_mlflow_runs_length, s:num_runs])
+    if l:curpos[1]>l:top_to_expts+s:actual_expts_length+l:expts_to_runs &&
+     \     l:curpos[1]<=l:top_to_expts+s:actual_expts_length+l:expts_to_runs+s:actual_runs_length
+        let l:currentLine = getline(l:curpos[1])
+        let l:runid5 = substitute(matchstr(l:currentLine, '\m\#[0-9a-fA-F]\{5\}\:'), '[\#\:]', '', 'g')
+        if l:runid5 != ''
+            if index(s:markruns_list, l:runid5) >= 0  " If item is in the list.
+                call remove(s:markruns_list, index(s:markruns_list, l:runid5))
+            else
+                call add(s:markruns_list, l:runid5)
+            endif
+        endif
+    endif
+    call RefreshMLflowBuffer(0)
 endfunction
 
 
