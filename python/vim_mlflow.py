@@ -75,7 +75,7 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
         beginrun_idx = int(vim.eval("s:runs_first_idx"))
         endrun_idx = int(vim.eval("s:runs_first_idx"))+int(vim.eval("g:vim_mlflow_runs_length"))
         for run in runs[beginrun_idx: endrun_idx]:
-            st = datetime.utcfromtimestamp(run.start_time/1e3).strftime('%Y-%m-%d %H:%M:%S')
+            st = datetime.utcfromtimestamp(run.start_time/1e3).strftime("%Y-%m-%d_%H:%M:%S")
             if LifecycleStage.matches_view_type(int(vim.eval("g:vim_mlflow_viewtype")), run.lifecycle_stage):
                 mark = " "
                 if run.run_id[:5] in vim.eval("s:markruns_list"):

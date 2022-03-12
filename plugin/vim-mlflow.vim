@@ -15,8 +15,11 @@ function! SetDefaults()
     let g:mlflow_tracking_uri = get(g:, 'mlflow_tracking_uri', 'http://localhost:5000')
     let g:vim_mlflow_timeout = get(g:, 'vim_mlflow_timeout', 0.5)  " seconds
     let g:vim_mlflow_buffername = get(g:, 'vim_mlflow_buffername', '__MLflow__')
+    let g:vim_mlflow_runs_buffername = get(g:, 'vim_mlflow_runs_buffername', '__MLflowRuns__')
     let g:vim_mlflow_vside = get(g:, 'vim_mlflow_vside', 'left')  " 'left' or 'right'
+    let g:vim_mlflow_hside = get(g:, 'vim_mlflow_hside', 'below')  " 'below' or 'above'
     let g:vim_mlflow_width = get(g:, 'vim_mlflow_width', 40)
+    let g:vim_mlflow_height = get(g:, 'vim_mlflow_height', 12)
     let g:vim_mlflow_expts_length = get(g:, 'vim_mlflow_expts_length', 8)
     let g:vim_mlflow_runs_length = get(g:, 'vim_mlflow_runs_length', 8)
     let g:vim_mlflow_viewtype = get(g:, 'vim_mlflow_viewtype', 1)  " 1:activeonly, 2:deletedonly, 3:all
@@ -35,12 +38,10 @@ function! SetDefaults()
         let g:vim_mlflow_icon_scrolldown = get(g:, 'vim_mlflow_icon_scrolldown', 'v')
         let g:vim_mlflow_icon_markrun = get(g:, 'vim_mlflow_icon_markrun', '>')
     endif
-
 endfunction
 
 
 function! RunMLflow()
-    " Set variables defining default/startup behavior
     let s:current_exptid = ''  " empty string means show '1st expt'
     let s:current_runid = ''   " empty string means show '1st run'
     let s:expt_hi = ''
@@ -51,6 +52,7 @@ function! RunMLflow()
     let s:metrics_are_showing = 1
     let s:tags_are_showing = 1
     let s:markruns_list = []
+    let s:hiddencols_list = []
   
     " Set the defaults for all the user-specifiable options
     call SetDefaults()
@@ -84,6 +86,7 @@ function! RunMLflow()
     nmap <buffer>  <space>  :call MarkRun()<CR>
     nmap <buffer>  o     :call RefreshMLflowBuffer(1)<CR>
     nmap <buffer>  r     :call RefreshMLflowBuffer(0)<CR>
+    nmap <buffer>  R     :call OpenRunsWindow()<CR>
     nmap <buffer>  <C-p> :call ToggleParamsDisplay()<CR>
     nmap <buffer>  <C-m> :call ToggleMetricsDisplay()<CR>
     nmap <buffer>  <C-t> :call ToggleTagsDisplay()<CR>
@@ -92,6 +95,38 @@ function! RunMLflow()
     nmap <buffer>  p     :call ScrollListUp()<CR>
     nmap <buffer>  N     :call ScrollListBtm()<CR>
     nmap <buffer>  P     :call ScrollListTop()<CR>
+
+endfunction
+
+
+function! OpenRunsWindow()
+  
+    if bufwinnr(g:vim_mlflow_runs_buffername) == -1
+        " Open a new split on specified side
+        if g:vim_mlflow_hside == 'below'
+            execute 'botright split ' . g:vim_mlflow_runs_buffername
+        elseif g:vim_mlflow_hside == 'above'
+            execute 'topleft split ' . g:vim_mlflow_runs_buffername
+        else
+            echo 'unrecognized value for g:vim_mlflow_hside = ' . g:vim_mlflow_hside
+        endif
+        execute 'resize ' . g:vim_mlflow_height
+    else
+        " Focus the existing window
+        execute bufwinnr(g:vim_mlflow_runs_buffername) . 'wincmd w'
+    endif
+  
+    " Set buffer properties: no line#s, don't prompt to save
+    set nonumber
+    set buftype=nofile
+  
+    " Initial query/draw of MLflow content
+    call RefreshRunsBuffer(1)
+    normal! 1G
+  
+    " Map certain key input to vim-mlflow features within buffer
+    nmap <buffer>  ?     :call ListHelpMsg()<CR>
+    nmap <buffer>  R     :call OpenRunsWindow()<CR>
 
 endfunction
 
@@ -141,6 +176,38 @@ function! RefreshMLflowBuffer(doassign, ...)
   
     " Colorize the contents
     call ColorizeMLflowBuffer()
+  
+    " Replace the cursor position
+    call setpos('.', l:curpos)
+  
+    redraw
+endfunction
+
+
+" Requery MLflow runs content and update buffer
+function! RefreshRunsBuffer(doassign, ...)
+    " let wordUnderCursor = expand("<cword>")  " useful later
+    let l:curpos = get(a:, 1)
+    if ! exists(l:curpos)
+        let l:curpos = getpos('.')
+    endif
+  
+    " Update current expt or run if specified in input arg
+    "if a:doassign
+    "    call AssignExptRunFromCurpos(l:curpos)
+    "endif
+  
+    " Clear out existing content
+    normal! gg"_dG
+  
+    " Insert the results.
+    let l:view = winsaveview()
+    let l:results = RunsPageMLflow()
+    call append(0, l:results)
+    call winrestview(l:view)
+  
+    " Colorize the contents
+    "call ColorizeMLflowBuffer()
   
     " Replace the cursor position
     call setpos('.', l:curpos)
@@ -372,4 +439,27 @@ EOF
 let g:vim_mlflow_plugin_loaded = 1
 let mlflowmain = py3eval('mlflowmain')
 return mlflowmain
+endfunction
+
+
+function! RunsPageMLflow()
+python3 << EOF
+import os, sys
+from os.path import normpath, join
+import vim
+if 'VIRTUAL_ENV' in os.environ:
+    project_base_dir = os.environ['VIRTUAL_ENV']
+    activate_this = os.path.join(project_base_dir, 'bin/activate_this.py')
+    exec(open(activate_this).read(), {'__file__': activate_this})
+
+plugin_root_dir = vim.eval('s:plugin_root_dir')
+python_root_dir = normpath(join(plugin_root_dir, '..', 'python'))
+sys.path.insert(0, python_root_dir)
+
+import vim_mlflow_runs  # this import must be after entering python env above
+mlflowruns = vim_mlflow_runs.getRunsPageMLflow(vim.eval('g:mlflow_tracking_uri'))
+EOF
+
+let mlflowruns = py3eval('mlflowruns')
+return mlflowruns
 endfunction
