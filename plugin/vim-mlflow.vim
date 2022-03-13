@@ -48,6 +48,7 @@ function! RunMLflow()
     let s:expts_first_idx = 0
     let s:runs_first_idx = 0
     let s:help_msg_is_showing = 0
+    let s:runhelp_msg_is_showing = 0
     let s:params_are_showing = 1
     let s:metrics_are_showing = 1
     let s:tags_are_showing = 1
@@ -125,7 +126,7 @@ function! OpenRunsWindow()
     normal! 1G
   
     " Map certain key input to vim-mlflow features within buffer
-    nmap <buffer>  ?     :call ListHelpMsg()<CR>
+    nmap <buffer>  ?     :call RunsListHelpMsg()<CR>
     nmap <buffer>  R     :call OpenRunsWindow()<CR>
 
 endfunction
@@ -207,12 +208,34 @@ function! RefreshRunsBuffer(doassign, ...)
     call winrestview(l:view)
   
     " Colorize the contents
-    "call ColorizeMLflowBuffer()
+    call ColorizeRunsBuffer()
   
     " Replace the cursor position
     call setpos('.', l:curpos)
   
     redraw
+endfunction
+
+
+function! ColorizeRunsBuffer()
+    let g:vim_mlflow_color_titles = 'pythonStatement'
+    let g:vim_mlflow_color_divlines = 'vimParenSep'  " 'pythonComment'
+    let g:vim_mlflow_color_scrollicons = 'vimParenSep'  " 'pythonComment'
+    let g:vim_mlflow_color_selectedexpt = 'pythonString'
+    let g:vim_mlflow_color_selectedrun = 'pythonNumber'
+    let g:vim_mlflow_color_help= 'pythonComment'
+    let g:vim_mlflow_color_markrun= 'pythonStatement'
+    call matchadd(g:vim_mlflow_color_titles, 'expt_id.*$')
+    if g:vim_mlflow_icon_vdivider != ''
+        call matchadd(g:vim_mlflow_color_divlines, repeat(g:vim_mlflow_icon_vdivider, 4).'*')
+    endif
+    call matchadd(g:vim_mlflow_color_help, '^".*')
+    " if s:markrun_expt_hi != ''
+    "     call matchdelete(s:markrun_expt_hi)
+    "     call matchdelete(s:markrun_run_hi)
+    " endif
+    " let s:markrun_expt_hi = matchadd(g:vim_mlflow_color_selectedexpt, '\#'.s:current_exptid.' ')
+    " let s:markrun_run_hi = matchadd(g:vim_mlflow_color_selectedrun, '\#'.s:current_runid[0:4].' ')
 endfunction
 
 
@@ -387,9 +410,11 @@ function! ListHelpMsg()
         \'Vim-MLflow',
         \'" ------------------------',
         \'" ?  :  toggle help listing',
+        \'" r  :  requery MLflow display',
         \'" o  :  enter expt or run under cursor',
         \'" <enter> :   "    "    "',
-        \'" r  :  requery MLflow display',
+        \'" <space> :  mark run under cursor',
+        \'" R  :  open marked-runs buffer',
         \'" A  :  cycle Active/Deleted/All view',
         \'" n  :  scroll down list under cursor',
         \'" p  :  scroll up list under cursor',
@@ -412,6 +437,35 @@ function! ListHelpMsg()
         call append(line('^'), '" Press ? for help')
         call append(line('^'), 'Vim-MLflow')
         let s:help_msg_is_showing = 0
+    endif
+    redraw
+  
+endfunction
+
+
+function! RunsListHelpMsg()
+    let l:helptext = [
+        \'Vim-MLflow Marked Runs',
+        \'" ------------------------',
+        \'" ?  :  toggle help listing',
+        \'" R  :  requery marked-runs display',
+        \'" x  :  remove run under cursor from list',
+        \'" .  :  collapse/open current column',
+        \'" ^0 :  move current column to front',
+        \'" ------------------------',
+        \'" Press ? to remove help',
+        \]
+    if ! s:runhelp_msg_is_showing
+        " temporarily remove 'press ? for help listing' message
+        normal! 1G2dd
+        call append(line('^'), l:helptext)
+        normal! 1G
+        let s:runhelp_msg_is_showing = 1
+    else
+        execute "normal! 1G". len(l:helptext) . "dd"
+        call append(line('^'), '" Press ? for help')
+        call append(line('^'), 'Vim-MLflow Marked Runs')
+        let s:runhelp_msg_is_showing = 0
     endif
     redraw
   
