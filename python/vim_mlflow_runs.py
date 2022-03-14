@@ -40,8 +40,8 @@ def getRunsPageMLflow(mlflow_tracking_uri):
             mldict = mlflow.get_run(runid).to_dictionary()
             rundict = mldict["info"]
             rundict.update(mldict["data"]["tags"])
-            rundict.update(mldict["data"]["metrics"])
             rundict.update(mldict["data"]["params"])
+            rundict.update(mldict["data"]["metrics"])
             runsforpd.append(rundict)
         runsdf = pd.DataFrame(runsforpd)
 

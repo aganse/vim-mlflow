@@ -19,7 +19,7 @@ function! SetDefaults()
     let g:vim_mlflow_vside = get(g:, 'vim_mlflow_vside', 'left')  " 'left' or 'right'
     let g:vim_mlflow_hside = get(g:, 'vim_mlflow_hside', 'below')  " 'below' or 'above'
     let g:vim_mlflow_width = get(g:, 'vim_mlflow_width', 40)
-    let g:vim_mlflow_height = get(g:, 'vim_mlflow_height', 12)
+    let g:vim_mlflow_height = get(g:, 'vim_mlflow_height', 10)
     let g:vim_mlflow_expts_length = get(g:, 'vim_mlflow_expts_length', 8)
     let g:vim_mlflow_runs_length = get(g:, 'vim_mlflow_runs_length', 8)
     let g:vim_mlflow_viewtype = get(g:, 'vim_mlflow_viewtype', 1)  " 1:activeonly, 2:deletedonly, 3:all
@@ -38,6 +38,13 @@ function! SetDefaults()
         let g:vim_mlflow_icon_scrolldown = get(g:, 'vim_mlflow_icon_scrolldown', 'v')
         let g:vim_mlflow_icon_markrun = get(g:, 'vim_mlflow_icon_markrun', '>')
     endif
+    let g:vim_mlflow_color_titles = get(g:, 'vim_mlflow_color_titles', 'Statement')
+    let g:vim_mlflow_color_divlines = get(g:, 'vim_mlflow_color_divlines', 'vimParenSep')
+    let g:vim_mlflow_color_scrollicons = get(g:, 'vim_mlflow_color_scrollicons', 'vimParenSep')
+    let g:vim_mlflow_color_selectedexpt = get(g:, 'vim_mlflow_color_selectedexpt', 'String')
+    let g:vim_mlflow_color_selectedrun = get(g:, 'vim_mlflow_color_selectedrun', 'Number')
+    let g:vim_mlflow_color_help = get(g:, 'vim_mlflow_color_help', 'Comment')
+    let g:vim_mlflow_color_markrun = get(g:, 'vim_mlflow_color_markrun', 'Statement')
 endfunction
 
 
@@ -53,6 +60,7 @@ function! RunMLflow()
     let s:metrics_are_showing = 1
     let s:tags_are_showing = 1
     let s:markruns_list = []
+    let s:markruns_exptids = []
     let s:hiddencols_list = []
   
     " Set the defaults for all the user-specifiable options
@@ -218,35 +226,15 @@ endfunction
 
 
 function! ColorizeRunsBuffer()
-    let g:vim_mlflow_color_titles = 'pythonStatement'
-    let g:vim_mlflow_color_divlines = 'vimParenSep'  " 'pythonComment'
-    let g:vim_mlflow_color_scrollicons = 'vimParenSep'  " 'pythonComment'
-    let g:vim_mlflow_color_selectedexpt = 'pythonString'
-    let g:vim_mlflow_color_selectedrun = 'pythonNumber'
-    let g:vim_mlflow_color_help= 'pythonComment'
-    let g:vim_mlflow_color_markrun= 'pythonStatement'
     call matchadd(g:vim_mlflow_color_titles, 'expt_id.*$')
     if g:vim_mlflow_icon_vdivider != ''
         call matchadd(g:vim_mlflow_color_divlines, repeat(g:vim_mlflow_icon_vdivider, 4).'*')
     endif
     call matchadd(g:vim_mlflow_color_help, '^".*')
-    " if s:markrun_expt_hi != ''
-    "     call matchdelete(s:markrun_expt_hi)
-    "     call matchdelete(s:markrun_run_hi)
-    " endif
-    " let s:markrun_expt_hi = matchadd(g:vim_mlflow_color_selectedexpt, '\#'.s:current_exptid.' ')
-    " let s:markrun_run_hi = matchadd(g:vim_mlflow_color_selectedrun, '\#'.s:current_runid[0:4].' ')
 endfunction
 
 
 function! ColorizeMLflowBuffer()
-    let g:vim_mlflow_color_titles = 'pythonStatement'
-    let g:vim_mlflow_color_divlines = 'vimParenSep'  " 'pythonComment'
-    let g:vim_mlflow_color_scrollicons = 'vimParenSep'  " 'pythonComment'
-    let g:vim_mlflow_color_selectedexpt = 'pythonString'
-    let g:vim_mlflow_color_selectedrun = 'pythonNumber'
-    let g:vim_mlflow_color_help= 'pythonComment'
-    let g:vim_mlflow_color_markrun= 'pythonStatement'
     call matchadd(g:vim_mlflow_color_titles, '^.*Experiments:')
     call matchadd(g:vim_mlflow_color_titles, '^.*Runs in expt .*:')
     call matchadd(g:vim_mlflow_color_titles, 'Params in run .*:')
@@ -295,6 +283,7 @@ function! MarkRun()
                 call remove(s:markruns_list, index(s:markruns_list, l:runid5))
             else
                 call add(s:markruns_list, l:runid5)
+                call add(s:markruns_exptids, s:current_exptid)
             endif
         endif
     endif
@@ -486,7 +475,13 @@ plugin_root_dir = vim.eval('s:plugin_root_dir')
 python_root_dir = normpath(join(plugin_root_dir, '..', 'python'))
 sys.path.insert(0, python_root_dir)
 
-import vim_mlflow  # this import must be after entering python env above
+try:
+    import vim_mlflow  # this import must be after entering python env above
+except:
+    print("Error: Vim-mlflow requires the mlflow python package to be installed in the environment in which it runs.")
+    print("Perhaps you are not in the python environment you think you are, or something was wrong with that install.")
+    print("Please see vim-mlflow's readme file for more details.")
+    exit
 mlflowmain = vim_mlflow.getMainPageMLflow(vim.eval('g:mlflow_tracking_uri'))
 EOF
 
