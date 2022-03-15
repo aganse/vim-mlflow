@@ -118,9 +118,10 @@ def getRunsPageMLflow(mlflow_tracking_uri):
 def make_headerline(lines, divchar):
     """Make the line under column headers based on char locations in columns"""
     a = re.sub('[^ ]', divchar, lines[0])
-    b = re.sub('[^ ]', divchar, lines[1])
-    c = ''.join(map(lambda x: divchar if x[0]==divchar or x[1]==divchar else ' ', zip(a, b)))
-    return c
+    for i in range(len(lines)-1):
+        b = re.sub('[^ ]', divchar, lines[i+1])
+        a = ''.join(map(lambda x: divchar if x[0]==divchar or x[1]==divchar else ' ', zip(a, b)))
+    return a
 
 
 def verifyTrackingUrl(url, timeout=1.0):
