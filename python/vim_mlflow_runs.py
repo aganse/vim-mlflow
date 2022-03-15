@@ -22,17 +22,20 @@ def getRunsPageMLflow(mlflow_tracking_uri):
 
     if verifyTrackingUrl(mlflow_tracking_uri, timeout=float(vim.eval("g:vim_mlflow_timeout"))):
 
+        # Find full runids for the short-runids in s:markruns_list
         if vim.eval("s:current_exptid") != "":
             runinfos = mlflow.list_run_infos(vim.eval("s:current_exptid"), run_view_type=int(vim.eval("g:vim_mlflow_viewtype")))
-
-        # Find full runids for the short-runids in s:markruns_list
         fullmarkrunids = []
         for run in runinfos:
             if run.run_id[:5] in vim.eval("s:markruns_list"):
                 fullmarkrunids.append(run.run_id)
-        # if markruns_list included runs from other expts they won't be in fullmarkrunidss_list yet
-        # but i want this - need to add further mechanism here to populate fullmarkrunidss_list
-        # with the runs in markruns_list from other expts - FIXME
+        if len(fullmarkrunids) < len(vim.eval("s:markruns_list")):
+            for exptid in set(vim.eval("s:markruns_exptids")):
+                if exptid != vim.eval("s:current_exptid"):
+                    runinfos = mlflow.list_run_infos(exptid, run_view_type=int(vim.eval("g:vim_mlflow_viewtype")))
+                    for run in runinfos:
+                        if run.run_id[:5] in vim.eval("s:markruns_list"):
+                            fullmarkrunids.append(run.run_id)
 
         # Loop over marked full-runids to get their complete info for display:
         runsforpd = []
@@ -97,6 +100,7 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         runsdf["end_time"] = runsdf["end_time"].apply(lambda x: round(x/1.0e9))
         runsdf["start_time"] = pd.to_datetime(runsdf["start_time"], unit="s")
         runsdf["end_time"] = pd.to_datetime(runsdf["end_time"], unit="s")
+        runsdf = runsdf.sort_values(["expt_id", "start_time"], ascending=False)
         lines = runsdf.to_string(index=False, justify="center").split('\n')
         for i, line in enumerate(lines):
             out.append(line)
