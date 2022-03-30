@@ -45,10 +45,12 @@ function! SetDefaults()
     let g:vim_mlflow_color_selectedrun = get(g:, 'vim_mlflow_color_selectedrun', 'Number')
     let g:vim_mlflow_color_help = get(g:, 'vim_mlflow_color_help', 'Comment')
     let g:vim_mlflow_color_markrun = get(g:, 'vim_mlflow_color_markrun', 'Statement')
+    let g:vim_mlflow_color_hiddencol = get(g:, 'vim_mlflow_color_hiddencol', 'Comment')
 endfunction
 
 
 function! RunMLflow()
+    let s:debuglines = []
     let s:current_exptid = ''  " empty string means show '1st expt'
     let s:current_runid = ''   " empty string means show '1st run'
     let s:expt_hi = ''
@@ -59,9 +61,16 @@ function! RunMLflow()
     let s:params_are_showing = 1
     let s:metrics_are_showing = 1
     let s:tags_are_showing = 1
+    let s:runs_params_are_showing = 1
+    let s:runs_metrics_are_showing = 1
+    let s:runs_tags_are_showing = 1
     let s:markruns_list = []
     let s:markruns_exptids = []
+    let s:numreducedcols = 0
+    let s:collapsedcols_list = []
     let s:hiddencols_list = []
+    let s:movedcols_list = []
+    let s:helptext = []
   
     " Set the defaults for all the user-specifiable options
     call SetDefaults()
@@ -96,9 +105,9 @@ function! RunMLflow()
     nmap <buffer>  o     :call RefreshMLflowBuffer(1)<CR>
     nmap <buffer>  r     :call RefreshMLflowBuffer(0)<CR>
     nmap <buffer>  R     :call OpenRunsWindow()<CR>
-    nmap <buffer>  <C-p> :call ToggleParamsDisplay()<CR>
-    nmap <buffer>  <C-m> :call ToggleMetricsDisplay()<CR>
-    nmap <buffer>  <C-t> :call ToggleTagsDisplay()<CR>
+    nmap <buffer>  <C-p> :call ToggleMLParamsDisplay()<CR>
+    nmap <buffer>  <C-m> :call ToggleMLMetricsDisplay()<CR>
+    nmap <buffer>  <C-t> :call ToggleMLTagsDisplay()<CR>
     nmap <buffer>  A     :call CycleActiveDeletedAll()<CR>
     nmap <buffer>  n     :call ScrollListDown()<CR>
     nmap <buffer>  p     :call ScrollListUp()<CR>
@@ -130,13 +139,38 @@ function! OpenRunsWindow()
     set buftype=nofile
   
     " Initial query/draw of MLflow content
-    call RefreshRunsBuffer(1)
+    call RefreshRunsBuffer()
     normal! 1G
   
     " Map certain key input to vim-mlflow features within buffer
     nmap <buffer>  ?     :call RunsListHelpMsg()<CR>
     nmap <buffer>  R     :call OpenRunsWindow()<CR>
+    nmap <buffer>  .     :call CollapseColumn()<CR>
+    nmap <buffer>  x     :call RemoveMarkedRunViaCurpos()<CR>
+    " nmap <buffer>  <C-h> :call HideColumn()<CR>
+    nmap <buffer>  <C-u> :call UnhideAll()<CR>
+    nmap <buffer>  <C-p> :call ToggleRunsParamsDisplay()<CR>
+    nmap <buffer>  <C-m> :call ToggleRunsMetricsDisplay()<CR>
+    nmap <buffer>  <C-t> :call ToggleRunsTagsDisplay()<CR>
 
+endfunction
+
+
+" Assign expt+run under cursor in Runs window to remove from runs list
+function! RemoveMarkedRunViaCurpos()
+    let l:curpos = getpos('.')
+    let l:currentLine = getline(l:curpos[1])
+  
+    " Not clear why couldn't get () operator to work in the regexp in matchstr below;
+    " Maybe some issue with vim 'magic'; if () could work then substitute is unnecesary.
+    let l:run = substitute(matchstr(l:currentLine, '\m\#[0-9a-fA-F]\{5\} '), '[\# ]', '', 'g')
+  
+    if l:run != ''
+        let s:markruns_list = filter(s:markruns_list, 'v:val[:5] !~ "'.l:run[:5].'"')
+    endif
+    "call cursor(1, 1)
+    call RefreshRunsBuffer()
+    "call RefreshMLflowBuffer(0)   " must change to __mlflow__ buffer first
 endfunction
 
 
@@ -144,8 +178,8 @@ endfunction
 function! AssignExptRunFromCurpos(curpos)
     let l:currentLine = getline(a:curpos[1])
   
-    " Not clear why couldn't get () to work in regexp in matchstr below;
-    " maybe some issue with vim 'magic'; with () then substitute unnecesary!
+    " Not clear why couldn't get () operator to work in the regexp in matchstr below;
+    " Maybe some issue with vim 'magic'; if () could work then substitute is unnecesary.
     let l:expt = substitute(matchstr(l:currentLine, '\m\#[0-9]\{1,4\}\:'), '[\#\:]', '', 'g')
     let l:run = substitute(matchstr(l:currentLine, '\m\#[0-9a-fA-F]\{5\}\:'), '[\#\:]', '', 'g')
   
@@ -163,7 +197,6 @@ endfunction
 
 " Requery MLflow content and update buffer
 function! RefreshMLflowBuffer(doassign, ...)
-    " let wordUnderCursor = expand("<cword>")  " useful later
     let l:curpos = get(a:, 1)
     if ! exists(l:curpos)
         let l:curpos = getpos('.')
@@ -194,17 +227,11 @@ endfunction
 
 
 " Requery MLflow runs content and update buffer
-function! RefreshRunsBuffer(doassign, ...)
-    " let wordUnderCursor = expand("<cword>")  " useful later
+function! RefreshRunsBuffer()
     let l:curpos = get(a:, 1)
     if ! exists(l:curpos)
         let l:curpos = getpos('.')
     endif
-  
-    " Update current expt or run if specified in input arg
-    "if a:doassign
-    "    call AssignExptRunFromCurpos(l:curpos)
-    "endif
   
     " Clear out existing content
     normal! gg"_dG
@@ -231,6 +258,10 @@ function! ColorizeRunsBuffer()
         call matchadd(g:vim_mlflow_color_divlines, repeat(g:vim_mlflow_icon_vdivider, 4).'*')
     endif
     call matchadd(g:vim_mlflow_color_help, '^".*')
+    call matchadd(g:vim_mlflow_color_hiddencol, ' : ')
+    if g:vim_mlflow_icon_vdivider != ''
+        call matchadd(g:vim_mlflow_color_hiddencol, ' '.g:vim_mlflow_icon_vdivider.' ')
+    endif
 endfunction
 
 
@@ -364,7 +395,51 @@ function! ScrollListTop()
 endfunction
 
 
-function! ToggleParamsDisplay()
+function! UnhideAll()
+    let s:collapsedcols_list = []
+    let s:hiddencols_list = []
+    let s:movedcols_list = []
+    call RefreshRunsBuffer()
+endfunction
+
+
+function! HideColumn()
+    let l:curcol = col('.')
+    " Convert cursor position into dataframe column # to hide:
+    let l:line = getline(5+len(s:debuglines))
+    let l:line = strcharpart(l:line, 0, l:curcol)
+    let l:colnum = len(split(l:line, ' ')) - 1 + s:numreducedcols
+    let l:hiddencols_le_colnum = filter(copy(s:hiddencols_list), {idx, v -> v <= l:colnum})
+    let s:numreducedcols = len(l:hiddencols_le_colnum)
+    let l:colnum = len(split(l:line, ' ')) - 1 + s:numreducedcols
+
+    if index(s:hiddencols_list, l:colnum) == -1
+        call add(s:hiddencols_list, str2nr(l:colnum))
+    endif
+    call RefreshRunsBuffer()
+endfunction
+
+
+function! CollapseColumn()
+    let l:curcol = col('.')
+    " Convert cursor position into dataframe column # to collapse:
+    let l:line = getline(5+len(s:debuglines))
+    let l:line = strcharpart(l:line, 0, l:curcol)
+    let l:colnum = len(split(l:line, ' ')) - 1 + s:numreducedcols
+    let l:hiddencols_le_colnum = filter(copy(s:hiddencols_list), {idx, v -> v <= l:colnum})
+    let s:numreducedcols = len(l:hiddencols_le_colnum)
+    let l:colnum = len(split(l:line, ' ')) - 1 + s:numreducedcols
+
+    if index(s:collapsedcols_list, l:colnum) >= 0
+        call remove(s:collapsedcols_list, index(s:collapsedcols_list, l:colnum))
+    else
+        call add(s:collapsedcols_list, str2nr(l:colnum))
+    endif
+    call RefreshRunsBuffer()
+endfunction
+
+
+function! ToggleMLParamsDisplay()
     if ! s:params_are_showing
         let s:params_are_showing = 1
     else
@@ -374,7 +449,7 @@ function! ToggleParamsDisplay()
 endfunction
 
 
-function! ToggleMetricsDisplay()
+function! ToggleMLMetricsDisplay()
     if ! s:metrics_are_showing
         let s:metrics_are_showing = 1
     else
@@ -384,7 +459,7 @@ function! ToggleMetricsDisplay()
 endfunction
 
 
-function! ToggleTagsDisplay()
+function! ToggleMLTagsDisplay()
     if ! s:tags_are_showing
         let s:tags_are_showing = 1
     else
@@ -394,8 +469,47 @@ function! ToggleTagsDisplay()
 endfunction
 
 
+function! ToggleRunsParamsDisplay()
+    if ! s:runs_params_are_showing
+        let s:runs_params_are_showing = 1
+    else
+        let s:runs_params_are_showing = 0
+    endif
+    let s:collapsedcols_list = []
+    let s:hiddencols_list = []
+    let s:movedcols_list = []
+    call RefreshRunsBuffer()
+endfunction
+
+
+function! ToggleRunsMetricsDisplay()
+    if ! s:runs_metrics_are_showing
+        let s:runs_metrics_are_showing = 1
+    else
+        let s:runs_metrics_are_showing = 0
+    endif
+    let s:collapsedcols_list = []
+    let s:hiddencols_list = []
+    let s:movedcols_list = []
+    call RefreshRunsBuffer()
+endfunction
+
+
+function! ToggleRunsTagsDisplay()
+    if ! s:runs_tags_are_showing
+        let s:runs_tags_are_showing = 1
+    else
+        let s:runs_tags_are_showing = 0
+    endif
+    let s:collapsedcols_list = []
+    let s:hiddencols_list = []
+    let s:movedcols_list = []
+    call RefreshRunsBuffer()
+endfunction
+
+
 function! ListHelpMsg()
-    let l:helptext = [
+    let s:helptext = [
         \'Vim-MLflow',
         \'" ------------------------',
         \'" ?  :  toggle help listing',
@@ -418,11 +532,11 @@ function! ListHelpMsg()
     if ! s:help_msg_is_showing
         " temporarily remove 'press ? for help listing' message
         normal! 1G2dd
-        call append(line('^'), l:helptext)
+        call append(line('^'), s:helptext)
         normal! 1G
         let s:help_msg_is_showing = 1
     else
-        execute "normal! 1G". len(l:helptext) . "dd"
+        execute "normal! 1G". len(s:helptext) . "dd"
         call append(line('^'), '" Press ? for help')
         call append(line('^'), 'Vim-MLflow')
         let s:help_msg_is_showing = 0
@@ -433,25 +547,30 @@ endfunction
 
 
 function! RunsListHelpMsg()
-    let l:helptext = [
+    let s:helptext = [
         \'Vim-MLflow Marked Runs',
         \'" ------------------------',
         \'" ?  :  toggle help listing',
         \'" R  :  requery marked-runs display',
         \'" x  :  remove run under cursor from list',
         \'" .  :  collapse/open current column',
-        \'" ^0 :  move current column to front',
+        \'" ^u :  unhide/undo all column changes',
+        \'" ^p :  toggle display of parameters',
+        \'" ^m :  toggle display of metrics',
+        \'" ^t :  toggle display of tags',
         \'" ------------------------',
         \'" Press ? to remove help',
         \]
+        " '" ^h :  hide current column completely',
+        " '" ^0 :  move current column to front',
     if ! s:runhelp_msg_is_showing
         " temporarily remove 'press ? for help listing' message
         normal! 1G2dd
-        call append(line('^'), l:helptext)
+        call append(line('^'), s:helptext)
         normal! 1G
         let s:runhelp_msg_is_showing = 1
     else
-        execute "normal! 1G". len(l:helptext) . "dd"
+        execute "normal! 1G". len(s:helptext) . "dd"
         call append(line('^'), '" Press ? for help')
         call append(line('^'), 'Vim-MLflow Marked Runs')
         let s:runhelp_msg_is_showing = 0

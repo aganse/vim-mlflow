@@ -12,6 +12,8 @@ def getRunsPageMLflow(mlflow_tracking_uri):
     out = []
     out.append("Vim-MLflow Marked Runs")
     out.append("\" Press ? for help")
+    for dline in vim.eval("s:debuglines"):
+        out.append('" '+dline)
     out.append("")
     if not vim.eval("s:markruns_list"):
         # no marked runs in list so nothing to do
@@ -42,13 +44,16 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         for runid in fullmarkrunids:
             mldict = mlflow.get_run(runid).to_dictionary()
             rundict = mldict["info"]
-            rundict.update(mldict["data"]["tags"])
-            rundict.update(mldict["data"]["params"])
-            rundict.update(mldict["data"]["metrics"])
+            if vim.eval("s:runs_tags_are_showing")=='1':
+                rundict.update(mldict["data"]["tags"])
+            if vim.eval("s:runs_params_are_showing")=='1':
+                rundict.update(mldict["data"]["params"])
+            if vim.eval("s:runs_metrics_are_showing")=='1':
+                rundict.update(mldict["data"]["metrics"])
             runsforpd.append(rundict)
         runsdf = pd.DataFrame(runsforpd)
 
-        # Process dataframe regarding visible/hidden/shortened columns
+        # Process dataframe regarding collapsed/hidden/shortened columns
 
         # Drop, rename, and reorder certain key columns to match mlflow webpage
         runsdf = runsdf.rename(
@@ -86,14 +91,7 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         if "runName" in runsdf.columns:
             runsdf["runName"] = runsdf["runName"].apply(lambda x: x[:20])
 
-        # Hide specified columns
-        colnames = runsdf.columns.values
-        for colidstr in vim.eval("s:hiddencols_list"):
-            runsdf.iloc[:, int(colidstr)] = ":"
-            colnames[int(colidstr)] = ":"
-        runsdf.columns = colnames
-
-        # Output dataframe
+        # Some final formatting
         runsdf["expt_id"] = runsdf["expt_id"].apply(lambda x: "#"+x)
         runsdf["run_id"] = runsdf["run_id"].apply(lambda x: "#"+x)
         runsdf["start_time"] = runsdf["start_time"].apply(lambda x: round(x/1.0e9))
@@ -101,11 +99,30 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         runsdf["start_time"] = pd.to_datetime(runsdf["start_time"], unit="s")
         runsdf["end_time"] = pd.to_datetime(runsdf["end_time"], unit="s")
         runsdf = runsdf.sort_values(["expt_id", "start_time"], ascending=False)
+
+        # Collapse specified columns
+        colnames = runsdf.columns.values
+        for colidstr in vim.eval("s:collapsedcols_list"):
+            runsdf.iloc[:, int(colidstr)] = ":"
+            colnames[int(colidstr)] = ":"
+        runsdf.columns = colnames
+
+        # Hide (remove) specified columns
+        cols2keep = [int(col) for col in range(runsdf.shape[1]) if str(col) not in vim.eval("s:hiddencols_list")]
+        runsdf = runsdf.iloc[:, cols2keep]
+
+        # Output dataframe
         lines = runsdf.to_string(index=False, justify="center").split('\n')
         for i, line in enumerate(lines):
             out.append(line)
             if i==0:
                 out.append(make_headerline(lines, vim.eval("g:vim_mlflow_icon_vdivider")))
+
+        # Retaining these lines while still debugging occasional column-hiding bug:
+        # out.append(f"nredcols:{vim.eval('s:numreducedcols')}")
+        # out.append(f"cols2keep:{cols2keep}")
+        # out.append(f"hidcols:{vim.eval('s:hiddencols_list')}")
+        # out.append(f"clpcols:{vim.eval('s:collapsedcols_list')}")
 
     else:
         out.append("Could not connect to mlflow_tracking_uri")
