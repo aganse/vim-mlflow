@@ -1,79 +1,97 @@
 # vim-mlflow
-Ever find it annoying to leave Vim and your terminal shell to go to your web
-browser, just to check or compare some numbers that shouldn't require that step?
-
 Vim-mlflow is a Vim plugin to view and browse in Vim the results one sees in an
-MLFlow website.
-
-It does require the mlflow python package to be installed in the environment
-that Vim is run in, and a version of Vim that supports python3.  Then in Vim hit
-`<leader>m` to start it, and Vim will connect to the default local mlflow server
-or the one in your .vimrc file.  An `__MLflow__` pane is opened on the side,
-allowing to browse the experiments and runs and their respective attributes.
-Move around with the usual Vim cursor movement keys; use the help listing to
-learn special keys to select, choose, and toggle parts of the display.  You can
-select some runs and open them in an `__MLflowRuns__` pane to allow further
-browsing, formatting, and comparing of them in columns - including runs from
-different experiments.  All the details are configurable.
+MLFlow website.  In a sidebar it provides scrollable lists of experiments and
+runs, from which one can drill into run attributes.  One can also mark runs
+across multiple experiments to list together in a more detailed runs buffer that
+allows hiding and arranging its columns.
 
 [![example vim-mlflow screenshot](doc/example_screen_shot.png)](doc/example_screen_shot.png)
 
 
-## Installation
+### A few quick caveats to note
+
+As my first Vim plugin, it is a beginning (but fully functional) work in
+progress, so there are some important caveats to note in advance:
+
+* It does require the MLFlow python package to be installed in the environment
+  that Vim is run in, and a version of Vim that supports python3.  (Detailed
+  instructions for this below.)
+
+* My current level of understanding of vim plugin scripting didn't see a way
+  to persist the python process over the full Vim session rather than an
+  individual function call (see e.g. `MainPageMLflow()` in vim-mlflow.vim
+  if interested).  The consequence of this is that vim-mlflow restarts the
+  python process on each refresh and navigation step, which in turn means it
+  requeries the MLFlow server at each step as well.  In my experimentation,
+  if the user is running Vim on the same machine as the MLFlow server, or the
+  network connection between the two is fast (say on same LAN), there's no
+  or little problem here, even with the fairly-extensive MLFlow database I run
+  in my workplace.  However, when the systems running Vim and the MLFlow server
+  are separated by a slower or less consistent network connection (e.g. running
+  Vim on a machine at home connecting to MLFlow server at work), then things
+  can be excrutiatingly slow.  But in my own case, from home we log in to
+  servers at work and always do everything there, so this wasn't a significant
+  problem.  Still, even in addition to this aspect, it could do to be much more
+  snappy; so multiple reasons to resolve this.  I would love to hear recommended
+  ways to refactor the plugin with a persistent python process that could hold
+  some dataframes in memory over the whole usage session.
+  
+
+### Basic usage
+
+Assuming it's installed (see below), then in Vim hit `<leader>m` or use
+`:call RunMLflow()` to start the plugin, and Vim will connect to the default
+local mlflow server (localhost:5000) or the one specified in your .vimrc file.
+An `__MLflow__` sidebar buffer is opened, allowing to browse the experiments
+and runs and their respective attributes.  Move around with the usual Vim cursor
+movement keys; select experiments and runs with `o` or `enter`.  Note the help
+listing via `?` to learn more keys to select, choose, and toggle parts of the
+display.  You can select some runs (across multiple experiments) and open them
+in an `__MLflowRuns__` pane to allow further browsing, formatting, and comparing
+of them in columns.  All the details are extensively configurable, including
+layout and characters used in the display and color highlighting.
+
+
+### Installation
 
 Vim-mlflow requires:
 
 1. Running a version of Vim that was compiled to include python3 support.
    (you can verify this by looking at the output of `vim --version`)
+
 2. Running Vim in an environment where the `mlflow` python package is installed
    (a dedicated python environment is recommended).  MLflow must be installed so
    Vim can use its python API to access the running MLflow server to which you
    connect, but note this MLflow installation is independent of the actual MLflow
    server itself.
-3. Understanding that vim-mlflow was originally written for an mlflow database
-   running on the same local server, so it reaccesses the mlflow database (thru
-   the API calls) on almost every hotkey stroke.  This can cause it to be slow to
-   access a remote mlflow service on a different machine.  If demand arises this
-   can be resolved in dev updates by making vim-mlflow access the mlflow APIs
-   less and storing more results in memory.  Meanwhile just be aware of it.
 
-To generate a python environment and install mlflow in a dedicated python
-environment, use virtualenv rather than `python3 -m venv`, so that the
-`activate_this.py` script is available in the environment.  Vim-mlflow uses
-this script to make mlflow accessible internally.
-```python
-virtualenv -p python3 .venv
-```
-(If need to install virtualenv first, you can do via `brew install virtualenv`
-on macos, or `sudo apt install virtualenv` on Debian-based Linuxes, and so on.)
+   To generate a python environment and install mlflow in a dedicated python
+   environment, use virtualenv rather than `python3 -m venv`, so that the
+   `activate_this.py` script is available in the environment.  Vim-mlflow uses
+   this script to make mlflow accessible internally.
+    ```python
+    virtualenv -p python3 .venv
+    ```
+   (If need to install virtualenv first, you can do via `brew install virtualenv`
+   on macos, or `sudo apt install virtualenv` on Debian-based Linuxes, and so on.)
 
-Then enter that environment and install the python dependencies:
-```python
-source .venv/bin/activate   # on linux or macos
-pip install mlflow
-```
+   Then enter that environment and install the python dependencies:
+    ```python
+    source .venv/bin/activate   # on linux or macos
+    pip install mlflow
+    ```
 
-Lastly install `aganse/vim-mlflow` into Vim via Vundle or whatever package
-manager.  For example with Vundle add `Plugin 'aganse/vim-mlflow'` into a line
-in your .vimrc file and then run `:PluginInstall` to actually install it into
-Vim the first time.  Other package managers have similar procedures and should
-work with vim-mlflow too.
+3. Lastly, install `aganse/vim-mlflow` into Vim via Vundle or whatever package
+   manager.  For example with Vundle, add `Plugin 'aganse/vim-mlflow'` into a
+   line in your .vimrc file and then run `:PluginInstall` to actually install it
+   into Vim the first time.  Other package managers have similar procedures and
+   should work with vim-mlflow too.
 
 
-## Usage
-
-In Vim, to open the MLflow page/connection, enter `:call RunMLflow()`
-or use the equivalent hot-key which by default is `<leader>m`.
-
-The overall usage is to use the standard Vim cursor-movement keys to move the
-cursor onto lines of experiments or runs, and pressing `o` or `enter` to select
-them.  Vim-mlflow requeries the MLflow server and updates the buffer accordingly.
-The help screen is accessed via pressing `?`, and will show other possibilities
-such as keys to toggle on/off various elements of the display, or to
-requery/refresh the display, or open the MLflowRuns pane.
+### Configuration
 
 A list of vim-mlflow config variables that may be of interest to set in .vimrc
-(the first one, `mlflow_tracking_uri`, may be the only one you need!):
+(you might get away with none, or only the first one: `mlflow_tracking_uri`):
 |           variable               |               description               |
 | -------------------------------- | --------------------------------------- |
 | `g:mlflow_tracking_uri`          | The MLFLOW_TRACKING_URI of the MLflow tracking server to connect to (default is `"http://localhost:5000"`)|
@@ -104,7 +122,7 @@ A list of vim-mlflow config variables that may be of interest to set in .vimrc
 | `g:vim_mlflow_color_hiddencol`   | Element highlight color label (default is `'Comment'`)|
 
 
-## Acknowledgements
+### Acknowledgements
 
 With many thanks to:
 * The Writing Vim plugin in Python article by Timur Rubeko, 2017 Aug 11, at
