@@ -108,8 +108,8 @@ Vim-mlflow requires:
 
    | vim-mlflow git tag | worked with mlflow version |
    | -------------------| -------------------------- |
-   | v0.9               |  1.26.1                    |
-   | (main latest)      |  1.30.0                    |
+   | v0.8               |  1.26.1                    |
+   | v0.9               |  1.30.0                    |
    | (none yet)         |  2.1.1                     |
 
 
