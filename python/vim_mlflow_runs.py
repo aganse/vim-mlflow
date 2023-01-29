@@ -6,6 +6,9 @@ import mlflow
 from mlflow.entities import ViewType, LifecycleStage
 import pandas as pd
 import vim
+import warnings
+
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 def getRunsPageMLflow(mlflow_tracking_uri):
@@ -26,18 +29,18 @@ def getRunsPageMLflow(mlflow_tracking_uri):
 
         # Find full runids for the short-runids in s:markruns_list
         if vim.eval("s:current_exptid") != "":
-            runinfos = mlflow.list_run_infos(vim.eval("s:current_exptid"), run_view_type=int(vim.eval("g:vim_mlflow_viewtype")))
+            runinfos = mlflow.search_runs(vim.eval("s:current_exptid"), output_format='list', run_view_type=int(vim.eval("g:vim_mlflow_viewtype")))
         fullmarkrunids = []
         for run in runinfos:
-            if run.run_id[:5] in vim.eval("s:markruns_list"):
-                fullmarkrunids.append(run.run_id)
+            if run.info.run_id[:5] in vim.eval("s:markruns_list"):
+                fullmarkrunids.append(run.info.run_id)
         if len(fullmarkrunids) < len(vim.eval("s:markruns_list")):
             for exptid in set(vim.eval("s:markruns_exptids")):
                 if exptid != vim.eval("s:current_exptid"):
-                    runinfos = mlflow.list_run_infos(exptid, run_view_type=int(vim.eval("g:vim_mlflow_viewtype")))
+                    runinfos = mlflow.search_runs(exptid, output_format='list', run_view_type=int(vim.eval("g:vim_mlflow_viewtype")))
                     for run in runinfos:
-                        if run.run_id[:5] in vim.eval("s:markruns_list"):
-                            fullmarkrunids.append(run.run_id)
+                        if run.info.run_id[:5] in vim.eval("s:markruns_list"):
+                            fullmarkrunids.append(run.info.run_id)
 
         # Loop over marked full-runids to get their complete info for display:
         runsforpd = []

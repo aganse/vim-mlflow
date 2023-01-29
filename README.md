@@ -87,6 +87,45 @@ Vim-mlflow requires:
    into Vim the first time.  Other package managers have similar procedures and
    should work with vim-mlflow too.
 
+4. Ok, lastly-lastly, for a smaller subset of users:  step 3 above installs the
+   latest state of vim-mlflow from its GitHub repo.  There are two scenarios
+   when one might instead want to install it from a locally-cloned repo, and in
+   both these cases instead of the Plugin line in step 3 above for the .vimrc
+   file, one should use the absolute path in a file:// protocol like this:
+   `Plugin 'file:///Users/aganse/Documents/src/python/vim-mlflow'`
+
+   *Scenario 1.)*  If you want to install a previous version or branch of
+   vim-mlflow (which is relevant because MLflow's APIs have changed over time so
+   certain versions of vim-mlflow work with certain version of mlflow).  Before
+   running `:PluginInstall`, in your locally-cloned repo directory listed in
+   your `Plugin` line, first `git checkout` the version tag or branch you want.
+
+   Alas MLflow does not seem to have rigorously followed dev practices - I've
+   run into problems with the APIs breaking/changing (python & rest) arbitrarily
+   within the same major version, which wreaks havoc with this plugin.  So here
+   I'm starting a list of which vim-mlflow commit/version worked with which
+   mlflow version.
+
+   | vim-mlflow git tag | worked with mlflow version |
+   | -------------------| -------------------------- |
+   | v0.9               |  1.26.1                    |
+   | (main latest)      |  1.30.0                    |
+   | (none yet)         |  2.1.1                     |
+
+
+   *Scenario 2.)*  If you want to tweak/develop the vim-mlflow code, then an
+   additional step is required (well, that is if you don't want to first git
+   commit every single time you want to check how your latest little code change
+   worked in vim).  For this case I manually `rm -rf ~/.vim/bundle/vim-mlflow`
+   and then symlink the locally cloned source directory to that spot, like this
+   for example (using my own source path in the example above):
+   `ln -s /Users/aganse/Documents/src/python/vim-mlflow ~/.vim/bundle`
+   If we don't do this, the Vundle package manager will not install the
+   _current working state_ of that directory; instead it will install the latest
+   _git commit_ from that directory, which of course is annoying when trying to
+   make code changes as you develop/tweak the plugin.  But with this symlink
+   vim will automatically see the changes made in the code.
+
 
 ### Configuration
 

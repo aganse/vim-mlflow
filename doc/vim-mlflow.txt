@@ -7,5 +7,11 @@ With many thanks to the Writing Vim plugin in Python article by Timur Rubeko at
 http://candidtim.github.io/vim/2017/08/11/write-vim-plugin-in-python.html
 
 
-Add reference to this plugin into .vimrc file:
-Plugin 'file:///Users/aganse/Documents/src/python/vim-mlflow'
+Referring to this plugin in your .vimrc file:
+
+* For normal users not developing/tweaking the plugin:
+  `Plugin 'aganse/vim-mlflow'`
+
+* For those who cloned the repo locally and want to tweak/dev further, use
+  the file:// protocol with absolute path, like this for example:
+  `Plugin 'file:///Users/aganse/Documents/src/python/vim-mlflow'`
