@@ -85,7 +85,7 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
                     mark = vim.eval("g:vim_mlflow_icon_markrun")
                 runtags = mlflow.get_run(run.info.run_id).data.tags
                 if "mlflow.runName" in runtags:
-                    runname = mlflow.get_run(run.info.run_id).data.tags["mlflow.runName"]
+                        runname = run.info.run_name
                 else:
                     runname = ""
                 if int(vim.eval('g:vim_mlflow_viewtype'))==ViewType.ALL:

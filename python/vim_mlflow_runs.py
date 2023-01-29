@@ -64,7 +64,6 @@ def getRunsPageMLflow(mlflow_tracking_uri):
                 "experiment_id": "expt_id",
                 "lifecycle_stage": "lifecycle",
                 "mlflow.user": "user",
-                "mlflow.runName": "runName",
                 "mlflow.source.name": "source.name",
                 "mlflow.source.type": "source.type",
                 "mlflow.source.git.commit": "git.commit",
@@ -76,8 +75,6 @@ def getRunsPageMLflow(mlflow_tracking_uri):
             )
         runsdf = runsdf.drop(columns=["run_uuid", "user_id", "mlflow.gitRepoURL"], errors="ignore")  # duplicated cols
         runsdf = runsdf.drop(columns=["mlflow.log-model.history", "artifact_uri"], errors="ignore")  # huge columns
-        if "runName" in runsdf.columns:
-            runsdf.insert(0, "runName", runsdf.pop("runName"))
         if "start_time" in runsdf.columns:
             runsdf.insert(0, "start_time", runsdf.pop("start_time"))
         if "end_time" in runsdf.columns:
@@ -91,8 +88,6 @@ def getRunsPageMLflow(mlflow_tracking_uri):
             runsdf["source.name"] = runsdf["source.name"].apply(lambda x: x.split("/")[-1])
         if "git.commit" in runsdf.columns:
             runsdf["git.commit"] = runsdf["git.commit"].apply(lambda x: x[:6])
-        if "runName" in runsdf.columns:
-            runsdf["runName"] = runsdf["runName"].apply(lambda x: x[:20])
 
         # Some final formatting
         runsdf["expt_id"] = runsdf["expt_id"].apply(lambda x: "#"+x)
