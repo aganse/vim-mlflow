@@ -5,7 +5,7 @@ runs, from which one can drill into run attributes.  One can also mark runs
 across multiple experiments to list together in a more detailed runs buffer that
 allows hiding and arranging its columns.
 
-[![example vim-mlflow screenshot](doc/example_screen_shot.png)](doc/example_screen_shot.png)
+[![example vim-mlflow screenshot](doc/demo.gif)](doc/demo.gif)
 
 
 ### A few quick caveats to note
@@ -125,6 +125,16 @@ Vim-mlflow requires:
    _git commit_ from that directory, which of course is annoying when trying to
    make code changes as you develop/tweak the plugin.  But with this symlink
    vim will automatically see the changes made in the code.
+
+
+### Making the animated screen-shot gif
+
+* pip install [asciinema](https://github.com/asciinema/asciinema)
+* asciinema rec demo.cast
+* conduct the use-case sequence like what's seen in existing demo.cast
+* install [agg](https://github.com/asciinema/agg) from
+  [premade binary](https://github.com/asciinema/agg/releases/download/v1.3.0/agg-aarch64-apple-darwin)
+* agg --speed 2 demo.cast demo.gif
 
 
 ### Configuration
