@@ -1,4 +1,25 @@
 # vim-mlflow
+A Vim plugin to browse the MLflow parameters and metrics from within Vim in a
+terminal instead of (or in additional to) the MLflow webapp GUI.
+
+> <SUP>
+> :bulb: Note this repo is part of a trio that you might find useful together
+> (but all are separate tools that can be used independently):
+>   
+> * [docker_mlflow_db](https://github.com/aganse/docker_mlflow_db):
+>     ready-to-run MLflow server with PostgreSQL, AWS S3, Nginx
+>   
+> * [py_tf2_gpu_dock_mlflow](https://github.com/aganse/py_tf2_gpu_dock_mlflow):
+>     ready-to-run Python/Tensorflow2/MLflow setup to train models on GPU
+>   
+> * [vim_mlflow](https://github.com/aganse/vim-mlflow):
+>     a Vim plugin to browse the MLflow parameters and metrics instead of GUI
+> </SUP>
+<P>&nbsp;<P>
+
+
+## Summary
+
 Vim-mlflow is a Vim plugin to view and browse in Vim the results one sees in an
 MLFlow website.  In a sidebar it provides scrollable lists of experiments and
 runs, from which one can drill into run attributes.  One can also mark runs
@@ -8,7 +29,7 @@ allows hiding and arranging its columns.
 [![example vim-mlflow screenshot](doc/demo.gif)](doc/demo.gif)
 
 
-### A few quick caveats to note
+## A few quick caveats to note
 
 As my first Vim plugin, it is a beginning (but fully functional) work in
 progress, so there are some important caveats to note in advance:
@@ -37,7 +58,7 @@ progress, so there are some important caveats to note in advance:
   some dataframes in memory over the whole usage session.
   
 
-### Basic usage
+## Basic usage
 
 Assuming it's installed (see below), then in Vim hit `<leader>m` or use
 `:call RunMLflow()` to start the plugin, and Vim will connect to the default
@@ -52,7 +73,7 @@ of them in columns.  All the details are extensively configurable, including
 layout and characters used in the display and color highlighting.
 
 
-### Installation
+## Installation
 
 Vim-mlflow requires:
 
@@ -127,7 +148,7 @@ Vim-mlflow requires:
    vim will automatically see the changes made in the code.
 
 
-### Making the animated screen-shot gif
+## Making the animated screen-shot gif
 
 * pip install [asciinema](https://github.com/asciinema/asciinema)
 * asciinema rec demo.cast
@@ -137,7 +158,7 @@ Vim-mlflow requires:
 * agg --speed 2 demo.cast demo.gif
 
 
-### Configuration
+## Configuration
 
 A list of vim-mlflow config variables that may be of interest to set in .vimrc
 (you might get away with none, or only the first one: `mlflow_tracking_uri`):
@@ -171,7 +192,7 @@ A list of vim-mlflow config variables that may be of interest to set in .vimrc
 | `g:vim_mlflow_color_hiddencol`   | Element highlight color label (default is `'Comment'`)|
 
 
-### Acknowledgements
+## Acknowledgements
 
 With many thanks to:
 * The Writing Vim plugin in Python article by Timur Rubeko, 2017 Aug 11, at
