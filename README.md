@@ -78,74 +78,43 @@ layout and characters used in the display and color highlighting.
 Vim-mlflow requires:
 
 1. Running a version of Vim that was compiled to include python3 support.
-   (you can verify this by looking at the output of `vim --version`)
+   You can verify this by looking at the output of `vim --version`.
 
 2. Running Vim in an environment where the `mlflow` python package is installed
    (a dedicated python environment is recommended).  MLflow must be installed so
    Vim can use its python API to access the running MLflow server to which you
-   connect, but note this MLflow installation is independent of the actual MLflow
+   connect.  So note this MLflow installation is independent of the MLflow
    server itself.
 
-   To generate a python environment and install mlflow in a dedicated python
-   environment, use virtualenv rather than `python3 -m venv`, so that the
-   `activate_this.py` script is available in the environment.  Vim-mlflow uses
-   this script to make mlflow accessible internally.
+   To generate your python environment and install mlflow do:
     ```python
-    virtualenv -p python3 .venv
-    ```
-   (If need to install virtualenv first, you can do via `brew install virtualenv`
-   on macos, or `sudo apt install virtualenv` on Debian-based Linuxes, and so on.)
-
-   Then enter that environment and install the python dependencies:
-    ```python
+    python3 -m venv .venv
     source .venv/bin/activate   # on linux or macos
     pip install mlflow
     ```
 
-3. Lastly, install `aganse/vim-mlflow` into Vim via Vundle or whatever package
-   manager.  For example with Vundle, add `Plugin 'aganse/vim-mlflow'` into a
-   line in your .vimrc file and then run `:PluginInstall` to actually install it
-   into Vim the first time.  Other package managers have similar procedures and
+3. Install `aganse/vim-mlflow` into Vim via Vundle or whatever package manager.
+   For example with Vundle, add `Plugin 'aganse/vim-mlflow'` into a line in
+   your .vimrc file and then run `:PluginInstall` to actually install it into
+   Vim the first time.  Other package managers have similar procedures and
    should work with vim-mlflow too.
 
-4. Ok, lastly-lastly, for a smaller subset of users:  step 3 above installs the
-   latest state of vim-mlflow from its GitHub repo.  There are two scenarios
-   when one might instead want to install it from a locally-cloned repo, and in
-   both these cases instead of the Plugin line in step 3 above for the .vimrc
-   file, one should use the absolute path in a file:// protocol like this:
-   `Plugin 'file:///Users/aganse/Documents/src/python/vim-mlflow'`
-
-   *Scenario 1.)*  If you want to install a previous version or branch of
-   vim-mlflow (which is relevant because MLflow's APIs have changed over time so
-   certain versions of vim-mlflow work with certain version of mlflow).  Before
-   running `:PluginInstall`, in your locally-cloned repo directory listed in
-   your `Plugin` line, first `git checkout` the version tag or branch you want.
-
-   Alas MLflow does not seem to have rigorously followed dev practices - I've
-   run into problems with the APIs breaking/changing (python & rest) arbitrarily
-   within the same major version, which wreaks havoc with this plugin.  So here
-   I'm starting a list of which vim-mlflow commit/version worked with which
-   mlflow version.
+   The latest state of vim-mlflow has been tested to work with MLflow v1.30.0
+   and v2.7.1.  Note it did not work with MLflow v2.1.1 (it appears that earlier
+   v2 MLflow releases might have broken a few API conventions but those appear
+   to have since been fixed).  An earlier MLflow version v1.26.1 doesn't work
+   with this latest vim-mlfow but will with its v0.8.  If you git checkout that
+   earlier version of vim-mlflow locally, you can reference it in your .vimrc
+   like `Plugin 'file:///Users/aganse/Documents/src/python/vim-mlflow'`.
+   Future updates of vim-mlflow will be designed to work with recent versions
+   of MLflow.
 
    | vim-mlflow git tag | worked with mlflow version |
    | -------------------| -------------------------- |
    | v0.8               |  1.26.1                    |
-   | v0.9               |  1.30.0                    |
-   | (none yet)         |  2.1.1                     |
+   | v0.9 and since     |  1.30.0, 2.7.1             |
+   | (none)             |  2.1.1                     |
 
-
-   *Scenario 2.)*  If you want to tweak/develop the vim-mlflow code, then an
-   additional step is required (well, that is if you don't want to first git
-   commit every single time you want to check how your latest little code change
-   worked in vim).  For this case I manually `rm -rf ~/.vim/bundle/vim-mlflow`
-   and then symlink the locally cloned source directory to that spot, like this
-   for example (using my own source path in the example above):
-   `ln -s /Users/aganse/Documents/src/python/vim-mlflow ~/.vim/bundle`
-   If we don't do this, the Vundle package manager will not install the
-   _current working state_ of that directory; instead it will install the latest
-   _git commit_ from that directory, which of course is annoying when trying to
-   make code changes as you develop/tweak the plugin.  But with this symlink
-   vim will automatically see the changes made in the code.
 
 
 ## Making the animated screen-shot gif
