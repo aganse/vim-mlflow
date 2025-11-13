@@ -106,7 +106,7 @@ function! RunMLflow()
     nmap <buffer>  r     :call RefreshMLflowBuffer(0)<CR>
     nmap <buffer>  R     :call OpenRunsWindow()<CR>
     nmap <buffer>  <C-p> :call ToggleMLParamsDisplay()<CR>
-    nmap <buffer>  <C-m> :call ToggleMLMetricsDisplay()<CR>
+    nmap <buffer>  <C-e> :call ToggleMLMetricsDisplay()<CR>
     nmap <buffer>  <C-t> :call ToggleMLTagsDisplay()<CR>
     nmap <buffer>  A     :call CycleActiveDeletedAll()<CR>
     nmap <buffer>  n     :call ScrollListDown()<CR>
@@ -150,7 +150,7 @@ function! OpenRunsWindow()
     " nmap <buffer>  <C-h> :call HideColumn()<CR>
     nmap <buffer>  <C-u> :call UnhideAll()<CR>
     nmap <buffer>  <C-p> :call ToggleRunsParamsDisplay()<CR>
-    nmap <buffer>  <C-m> :call ToggleRunsMetricsDisplay()<CR>
+    nmap <buffer>  <C-e> :call ToggleRunsMetricsDisplay()<CR>
     nmap <buffer>  <C-t> :call ToggleRunsTagsDisplay()<CR>
 
 endfunction
@@ -530,7 +530,7 @@ function! ListHelpMsg()
         \'" N  :  scroll to bottom of list',
         \'" P  :  scroll to top of list',
         \'" ^p :  toggle display of parameters',
-        \'" ^m :  toggle display of metrics',
+        \'" ^e :  toggle display of metrics',
         \'" ^t :  toggle display of tags',
         \'" ------------------------',
         \'" Press ? to remove help',
@@ -562,7 +562,7 @@ function! RunsListHelpMsg()
         \'" .  :  collapse/open current column',
         \'" ^u :  unhide/undo all column changes',
         \'" ^p :  toggle display of parameters',
-        \'" ^m :  toggle display of metrics',
+        \'" ^e :  toggle display of metrics',
         \'" ^t :  toggle display of tags',
         \'" ------------------------',
         \'" Press ? to remove help',
