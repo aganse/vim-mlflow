@@ -114,8 +114,9 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         colnames = runsdf.columns.values
         for colidstr in vim.eval("s:collapsedcols_list"):
             col_idx = int(colidstr)
-            runsdf.iloc[:, col_idx] = runsdf.iloc[:, col_idx].astype("object")
-            runsdf.iloc[:, col_idx] = ":"
+            colname = runsdf.columns[col_idx]
+            runsdf[colname] = runsdf[colname].astype(str)
+            runsdf[colname] = ":"
             colnames[col_idx] = ":"
         runsdf.columns = colnames
 
