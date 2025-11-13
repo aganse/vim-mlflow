@@ -113,8 +113,10 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         # Collapse specified columns
         colnames = runsdf.columns.values
         for colidstr in vim.eval("s:collapsedcols_list"):
-            runsdf.iloc[:, int(colidstr)] = ":"
-            colnames[int(colidstr)] = ":"
+            col_idx = int(colidstr)
+            runsdf.iloc[:, col_idx] = runsdf.iloc[:, col_idx].astype("object")
+            runsdf.iloc[:, col_idx] = ":"
+            colnames[col_idx] = ":"
         runsdf.columns = colnames
 
         # Hide (remove) specified columns
