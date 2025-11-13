@@ -594,7 +594,8 @@ import vim
 if 'VIRTUAL_ENV' in os.environ:
     project_base_dir = os.environ['VIRTUAL_ENV']
     # Add the site-packages of the current virtual environment to sys.path
-    sys.path.insert(0, join(project_base_dir, 'lib', 'python%s' % sys.version[:3], 'site-packages'))
+    py_version_dir = 'python{}.{}'.format(sys.version_info.major, sys.version_info.minor)
+    sys.path.insert(0, join(project_base_dir, 'lib', py_version_dir, 'site-packages'))
 
 plugin_root_dir = vim.eval('s:plugin_root_dir')
 python_root_dir = normpath(join(plugin_root_dir, '..', 'python'))
@@ -624,7 +625,8 @@ import vim
 if 'VIRTUAL_ENV' in os.environ:
     project_base_dir = os.environ['VIRTUAL_ENV']
     # Add the site-packages of the current virtual environment to sys.path
-    sys.path.insert(0, join(project_base_dir, 'lib', 'python%s' % sys.version[:3], 'site-packages'))
+    py_version_dir = 'python{}.{}'.format(sys.version_info.major, sys.version_info.minor)
+    sys.path.insert(0, join(project_base_dir, 'lib', py_version_dir, 'site-packages'))
 
 plugin_root_dir = vim.eval('s:plugin_root_dir')
 python_root_dir = normpath(join(plugin_root_dir, '..', 'python'))
