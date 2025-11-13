@@ -518,7 +518,7 @@ function! ListHelpMsg()
         \'" <enter> :   "    "    "',
         \'" <space> :  mark run under cursor',
         \'" R  :  open marked-runs buffer',
-        \'" A  :  cycle Active/Deleted/All view',
+        \'" A  :  cycle Active/Deleted/Total view',
         \'" n  :  scroll down list under cursor',
         \'" p  :  scroll up list under cursor',
         \'" N  :  scroll to bottom of list',

@@ -3,12 +3,20 @@ import re
 from urllib.request import urlopen, Request
 
 import mlflow
-from mlflow.entities import ViewType, LifecycleStage
+from mlflow.entities import ViewType
+from mlflow.tracking import MlflowClient
 import pandas as pd
 import vim
 import warnings
 
-warnings.simplefilter(action='ignore', category=FutureWarning)
+#warnings.simplefilter(action='ignore', category=FutureWarning)
+
+
+VIEWTYPE_MAP = {
+    1: ViewType.ACTIVE_ONLY,
+    2: ViewType.DELETED_ONLY,
+    3: ViewType.ALL,
+}
 
 
 def getRunsPageMLflow(mlflow_tracking_uri):
@@ -28,8 +36,12 @@ def getRunsPageMLflow(mlflow_tracking_uri):
     if verifyTrackingUrl(mlflow_tracking_uri, timeout=float(vim.eval("g:vim_mlflow_timeout"))):
 
         # Find full runids for the short-runids in s:markruns_list
+        client = MlflowClient(tracking_uri=mlflow_tracking_uri)
+        view_idx = int(vim.eval("g:vim_mlflow_viewtype"))
+        view_type = VIEWTYPE_MAP.get(view_idx, ViewType.ACTIVE_ONLY)
+        runinfos = []
         if vim.eval("s:current_exptid") != "":
-            runinfos = mlflow.search_runs(vim.eval("s:current_exptid"), output_format='list', run_view_type=int(vim.eval("g:vim_mlflow_viewtype")))
+            runinfos = client.search_runs([str(vim.eval("s:current_exptid"))], run_view_type=view_type)
         fullmarkrunids = []
         for run in runinfos:
             if run.info.run_id[:5] in vim.eval("s:markruns_list"):
@@ -37,7 +49,7 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         if len(fullmarkrunids) < len(vim.eval("s:markruns_list")):
             for exptid in set(vim.eval("s:markruns_exptids")):
                 if exptid != vim.eval("s:current_exptid"):
-                    runinfos = mlflow.search_runs(exptid, output_format='list', run_view_type=int(vim.eval("g:vim_mlflow_viewtype")))
+                    runinfos = client.search_runs([str(exptid)], run_view_type=view_type)
                     for run in runinfos:
                         if run.info.run_id[:5] in vim.eval("s:markruns_list"):
                             fullmarkrunids.append(run.info.run_id)
@@ -45,7 +57,7 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         # Loop over marked full-runids to get their complete info for display:
         runsforpd = []
         for runid in fullmarkrunids:
-            mldict = mlflow.get_run(runid).to_dictionary()
+            mldict = client.get_run(runid).to_dictionary()
             rundict = mldict["info"]
             if vim.eval("s:runs_tags_are_showing")=='1':
                 rundict.update(mldict["data"]["tags"])
