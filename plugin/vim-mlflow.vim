@@ -168,9 +168,15 @@ function! RemoveMarkedRunViaCurpos()
     if l:run != ''
         let s:markruns_list = filter(s:markruns_list, 'v:val[:5] !~ "'.l:run[:5].'"')
     endif
-    "call cursor(1, 1)
     call RefreshRunsBuffer()
-    "call RefreshMLflowBuffer(0)   " must change to __mlflow__ buffer first
+    " Also refresh the main pane so marks disappear there too.
+    let l:current_win = win_getid()
+    let l:mlflow_winnr = bufwinnr(g:vim_mlflow_buffername)
+    if l:mlflow_winnr != -1
+        execute l:mlflow_winnr . 'wincmd w'
+        call RefreshMLflowBuffer(0)
+        call win_gotoid(l:current_win)
+    endif
 endfunction
 
 
