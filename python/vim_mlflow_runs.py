@@ -104,10 +104,12 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         # Some final formatting
         runsdf["expt_id"] = runsdf["expt_id"].apply(lambda x: "#"+x)
         runsdf["run_id"] = runsdf["run_id"].apply(lambda x: "#"+x)
-        runsdf["start_time"] = runsdf["start_time"].apply(lambda x: round(x/1.0e9))
-        runsdf["end_time"] = runsdf["end_time"].apply(lambda x: round(x/1.0e9))
-        runsdf["start_time"] = pd.to_datetime(runsdf["start_time"], unit="s")
-        runsdf["end_time"] = pd.to_datetime(runsdf["end_time"], unit="s")
+        if "start_time" in runsdf.columns:
+            runsdf["start_time"] = (runsdf["start_time"] / 1.0e9).round()
+            runsdf["start_time"] = pd.to_datetime(runsdf["start_time"], unit="s", errors="coerce")
+        if "end_time" in runsdf.columns:
+            runsdf["end_time"] = (runsdf["end_time"] / 1.0e9).round()
+            runsdf["end_time"] = pd.to_datetime(runsdf["end_time"], unit="s", errors="coerce")
         runsdf = runsdf.sort_values(["expt_id", "start_time"], ascending=False)
 
         # Collapse specified columns
