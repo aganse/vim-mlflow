@@ -76,6 +76,10 @@ press `x` to open an ASCII plot of its history in the right-hand pane. All the
 details are extensively configurable, including layout and characters used in
 the display and color highlighting.
 
+Press `Ctrl-A` to toggle an artifacts section; use `x` on directories to expand
+them or on supported text artifacts (`*.txt`, `*.json`, `*.yaml`, `MLmodel`) to
+view their contents in a side buffer.
+
 
 ## Installation
 
@@ -174,6 +178,7 @@ A list of vim-mlflow config variables that may be of interest to set in .vimrc
 | `g:vim_mlflow_plot_width`        | ASCII plot width in columns (default `70`)|
 | `g:vim_mlflow_plot_xaxis`        | `'step'` or `'timestamp'` for metric plot x-axis (default `'step'`)|
 | `g:vim_mlflow_plot_reuse_buffer` | If `1`, reuse a single `__MLflowMetricPlot__` buffer; if `0`, create sequential plot buffers (default `1`)|
+| `g:vim_mlflow_artifacts_max_depth` | Maximum artifact directory depth shown when expanding folders (default `3`)|
 
 
 ## Acknowledgements

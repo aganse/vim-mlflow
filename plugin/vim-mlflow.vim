@@ -62,6 +62,8 @@ function! SetDefaults()
     let g:vim_mlflow_color_plot_axes = get(g:, 'vim_mlflow_color_plot_axes', 'vimParenSep')
     let g:vim_mlflow_color_plotpts = get(g:, 'vim_mlflow_color_plotpts', 'Constant')
     let g:vim_mlflow_color_between_plotpts = get(g:, 'vim_mlflow_color_between_plotpts', 'Comment')
+    let g:vim_mlflow_artifact_expanded = get(g:, 'vim_mlflow_artifact_expanded', {})
+    let g:vim_mlflow_artifacts_max_depth = get(g:, 'vim_mlflow_artifacts_max_depth', 3)
 endfunction
 
 
@@ -168,6 +170,9 @@ function! RunMLflow()
     let s:runs_params_are_showing = 1
     let s:runs_metrics_are_showing = 1
     let s:runs_tags_are_showing = 1
+    let s:artifacts_are_showing = 0
+    let s:artifact_lineinfo = {}
+    let g:vim_mlflow_artifact_expanded = {}
     let s:markruns_list = []
     let s:markruns_exptids = []
     let s:numreducedcols = 0
@@ -206,13 +211,14 @@ function! RunMLflow()
     nmap <buffer>  ?     :call ListHelpMsg()<CR>
     nmap <buffer>  <CR>  :call RefreshMLflowBuffer(1)<CR>
     nmap <buffer>  <space>  :call MarkRun()<CR>
-    nmap <buffer>  x     :call PlotMetricUnderCursor()<CR>
+    nmap <buffer>  x     :call MLflowActionUnderCursor()<CR>
     nmap <buffer>  o     :call RefreshMLflowBuffer(1)<CR>
-    nmap <buffer>  r     :call RefreshMLflowBuffer(0)<CR>
+    nmap <buffer>  r     :call RefreshMLflowBuffer(0, 1)<CR>
     nmap <buffer>  R     :call OpenRunsWindow()<CR>
     nmap <buffer>  <C-p> :call ToggleMLParamsDisplay()<CR>
     nmap <buffer>  <C-e> :call ToggleMLMetricsDisplay()<CR>
     nmap <buffer>  <C-t> :call ToggleMLTagsDisplay()<CR>
+    nmap <buffer>  <C-a> :call ToggleMLArtifactsDisplay()<CR>
     nmap <buffer>  A     :call CycleActiveDeletedAll()<CR>
     nmap <buffer>  n     :call ScrollListDown()<CR>
     nmap <buffer>  p     :call ScrollListUp()<CR>
@@ -298,9 +304,11 @@ function! AssignExptRunFromCurpos(curpos)
         let s:current_exptid = l:expt
         let s:current_runid = ''
         let s:runs_first_idx = 0
+        let g:vim_mlflow_artifact_expanded = {}
     endif
     if l:run != ''
         let s:current_runid = l:run
+        let g:vim_mlflow_artifact_expanded = {}
     endif
     call cursor(1, 1)
 endfunction
@@ -308,16 +316,27 @@ endfunction
 
 " Requery MLflow content and update buffer
 function! RefreshMLflowBuffer(doassign, ...)
-    let l:curpos = get(a:, 1)
-    if ! exists(l:curpos)
-        let l:curpos = getpos('.')
+    let l:curpos = getpos('.')
+    let l:reset_artifacts = 0
+    if len(a:000) >= 1
+        if type(a:000[0]) == type([])
+            let l:curpos = a:000[0]
+            if len(a:000) >= 2
+                let l:reset_artifacts = a:000[1]
+            endif
+        else
+            let l:reset_artifacts = a:000[0]
+        endif
     endif
-  
+    if l:reset_artifacts
+        let g:vim_mlflow_artifact_expanded = {}
+    endif
+ 
     " Update current expt or run if specified in input arg
     if a:doassign
         call AssignExptRunFromCurpos(l:curpos)
     endif
-  
+ 
     " Clear out existing content
     normal! gg"_dG
   
@@ -326,13 +345,18 @@ function! RefreshMLflowBuffer(doassign, ...)
     let l:results = MainPageMLflow()
     call append(0, l:results)
     call winrestview(l:view)
-  
+ 
     " Colorize the contents
     call ColorizeMLflowBuffer()
-  
+    if s:artifacts_are_showing
+        let s:artifact_lineinfo = get(g:, 'vim_mlflow_artifact_lineinfo', {})
+    else
+        let s:artifact_lineinfo = {}
+    endif
+ 
     " Replace the cursor position
     call setpos('.', l:curpos)
-  
+ 
     redraw
 endfunction
 
@@ -629,7 +653,7 @@ function! ListHelpMsg()
         \'" o  :  enter expt or run under cursor',
         \'" <enter> :   "    "    "',
         \'" <space> :  mark run under cursor',
-        \'" x  :  plot metric under cursor (if available)',
+        \'" x  :  open plot or artifact under cursor',
         \'" R  :  open marked-runs buffer',
         \'" A  :  cycle Active/Deleted/Total view',
         \'" n  :  scroll down list under cursor',
@@ -639,6 +663,7 @@ function! ListHelpMsg()
         \'" ^p :  toggle display of parameters',
         \'" ^e :  toggle display of metrics',
         \'" ^t :  toggle display of tags',
+        \'" ^a :  toggle display of artifacts',
         \'" ------------------------',
         \'" Press ? to remove help',
         \]
@@ -747,7 +772,7 @@ let mlflowruns = py3eval('mlflowruns')
 return mlflowruns
 endfunction
 " Plot metric history when cursor is on metrics line
-function! PlotMetricUnderCursor()
+function! HandleMetricPlotUnderCursor()
     let l:curline = getline('.')
     let l:match = matchlist(l:curline, '\m^\s\+\(\S\+\):')
     if empty(l:match)
@@ -833,4 +858,151 @@ EOF
     if exists('g:vim_mlflow_plot_title')
         unlet g:vim_mlflow_plot_title
     endif
+endfunction
+
+
+function! MLflowActionUnderCursor()
+    let l:line = line('.')
+    let l:key = string(l:line)
+    let l:info = get(s:artifact_lineinfo, l:key, {})
+    if !empty(l:info)
+        if l:info.type ==# 'dir'
+            call ToggleArtifactDirectory(l:info.path)
+        elseif l:info.type ==# 'file'
+            if l:info.openable
+                call OpenArtifactFile(l:info.path)
+            else
+                echo "vim-mlflow: artifact not opened (unsupported type)."
+            endif
+        endif
+        return
+    endif
+    call HandleMetricPlotUnderCursor()
+endfunction
+
+
+function! ToggleMLArtifactsDisplay()
+    if s:artifacts_are_showing
+        let s:artifacts_are_showing = 0
+    else
+        let s:artifacts_are_showing = 1
+    endif
+    let g:vim_mlflow_artifact_expanded = {}
+    let g:vim_mlflow_artifact_lineinfo = {}
+    let s:artifact_lineinfo = {}
+    call RefreshMLflowBuffer(0)
+endfunction
+
+
+function! ToggleArtifactDirectory(path)
+    if has_key(g:vim_mlflow_artifact_expanded, a:path)
+        call remove(g:vim_mlflow_artifact_expanded, a:path)
+    else
+        let g:vim_mlflow_artifact_expanded[a:path] = 1
+    endif
+    call RefreshMLflowBuffer(0)
+endfunction
+
+
+function! OpenArtifactFile(path)
+    if a:path == ''
+        return
+    endif
+python3 << EOF
+import os, sys, json, tempfile
+from os.path import normpath, join
+import vim
+if 'VIRTUAL_ENV' in os.environ:
+    project_base_dir = os.environ['VIRTUAL_ENV']
+    py_version_dir = 'python{}.{}'.format(sys.version_info.major, sys.version_info.minor)
+    sys.path.insert(0, join(project_base_dir, 'lib', py_version_dir, 'site-packages'))
+
+plugin_root_dir = vim.eval('s:plugin_root_dir')
+python_root_dir = normpath(join(plugin_root_dir, '..', 'python'))
+sys.path.insert(0, python_root_dir)
+
+import vim_mlflow
+
+artifact_path = vim.eval('a:path')
+run_id = vim.eval('s:current_runid')
+tracking_uri = vim.eval('g:mlflow_tracking_uri')
+target_dir = os.path.join(tempfile.gettempdir(), "vim-mlflow")
+try:
+    local_path = vim_mlflow.download_artifact_file(tracking_uri, run_id, artifact_path, target_dir)
+    vim.vars['vim_mlflow_artifact_local'] = local_path
+    vim.vars['vim_mlflow_artifact_error'] = ''
+except Exception as exc:
+    vim.vars['vim_mlflow_artifact_local'] = ''
+    vim.vars['vim_mlflow_artifact_error'] = str(exc)
+EOF
+    if !exists('g:vim_mlflow_artifact_local')
+        echo "vim-mlflow: failed to download artifact."
+        return
+    endif
+    let l:local = g:vim_mlflow_artifact_local
+    unlet g:vim_mlflow_artifact_local
+    if l:local ==# ''
+        let l:err = get(g:, 'vim_mlflow_artifact_error', 'artifact download failed')
+        echo 'vim-mlflow: ' . l:err
+        if exists('g:vim_mlflow_artifact_error')
+            unlet g:vim_mlflow_artifact_error
+        endif
+        return
+    endif
+    if exists('g:vim_mlflow_artifact_error')
+        unlet g:vim_mlflow_artifact_error
+    endif
+    if filereadable(l:local)
+        let l:lines = readfile(l:local)
+        call s:ShowArtifactBuffer(a:path, l:lines)
+    else
+        echo "vim-mlflow: artifact not readable."
+    endif
+endfunction
+
+
+function! s:ShowArtifactBuffer(path, lines)
+    let l:bufname = '__MLflowArtifact__'
+    let l:winnr = bufwinnr(l:bufname)
+    if l:winnr == -1
+        let l:scratch = s:FindScratchWindow()
+        if l:scratch != -1
+            call win_gotoid(l:scratch)
+            execute 'enew'
+            execute 'file ' . l:bufname
+        else
+            if g:vim_mlflow_vside ==# 'left'
+                execute 'vert botright split ' . l:bufname
+            else
+                execute 'vert topleft split ' . l:bufname
+            endif
+        endif
+    else
+        execute l:winnr . 'wincmd w'
+    endif
+    setlocal buftype=nofile
+    setlocal bufhidden=wipe
+    setlocal noswapfile
+    setlocal modifiable
+    silent keepjumps %d
+    call setline(1, ['Artifact: ' . a:path])
+    if !empty(a:lines)
+        call append(1, a:lines)
+    endif
+    setlocal nomodifiable
+    call cursor(2, 1)
+endfunction
+
+
+function! s:FindScratchWindow()
+    for l:w in range(1, winnr('$'))
+        let l:buf = winbufnr(l:w)
+        if l:buf <= 0
+            continue
+        let l:name = bufname(l:buf)
+        if empty(l:name) && getbufvar(l:buf, '&buftype') == ''
+            return win_getid(l:w)
+        endif
+    endfor
+    return -1
 endfunction

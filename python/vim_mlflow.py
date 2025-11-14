@@ -1,6 +1,8 @@
 from datetime import datetime
 from urllib.request import urlopen, Request
 import math
+import os
+import json
 
 import mlflow
 from mlflow.entities import ViewType
@@ -262,6 +264,88 @@ def _downsample_points(points, target_len):
     return downsampled
 
 
+def _collect_artifacts(client, run_id, path="", depth=0, max_depth=50):
+    nodes = []
+    try:
+        artifacts = client.list_artifacts(run_id, path)
+    except Exception:
+        return nodes
+    for item in sorted(artifacts, key=lambda a: a.path):
+        node = {
+            "path": item.path,
+            "name": item.path.rsplit("/", 1)[-1],
+            "is_dir": item.is_dir,
+            "children": [],
+        }
+        if item.is_dir and depth < max_depth:
+            node["children"] = _collect_artifacts(client, run_id, item.path, depth + 1, max_depth)
+        nodes.append(node)
+    return nodes
+
+
+def _is_text_artifact(name):
+    lowered = name.lower()
+    if lowered == "mlmodel":
+        return True
+    for suffix in (".txt", ".json", ".yaml", ".yml"):
+        if lowered.endswith(suffix):
+            return True
+    return False
+
+
+def _render_artifact_section(short_run_id, tree, expanded, mark_icon, open_icon, divider_char, max_depth=3):
+    indent_unit = "  "
+    lines = [f"Artifacts in run #{short_run_id}:", divider_char * 30]
+    info_entries = []
+
+    def walk(nodes, depth):
+        for node in sorted(nodes, key=lambda n: (not n["is_dir"], n["name"])):
+            indent = indent_unit * depth
+            if node["is_dir"]:
+                is_open = bool(expanded.get(node["path"]))
+                icon = open_icon if is_open else mark_icon
+                display = f"{indent}{icon} {node['name']}/"
+                info_entries.append(
+                    {
+                        "offset": len(lines),
+                        "type": "dir",
+                        "path": node["path"],
+                        "expanded": is_open,
+                        "depth": depth,
+                    }
+                )
+                lines.append(display)
+                if is_open and depth < max_depth:
+                    walk(node["children"], depth + 1)
+            else:
+                openable = _is_text_artifact(node["name"])
+                display = f"{indent}{indent_unit}{node['name']}"
+                info_entries.append(
+                    {
+                        "offset": len(lines),
+                        "type": "file",
+                        "path": node["path"],
+                        "openable": openable,
+                        "depth": depth,
+                    }
+                )
+                lines.append(display)
+
+    walk(tree, 0)
+    lines.append("")
+    return lines, info_entries
+
+
+def download_artifact_file(tracking_uri, run_id, artifact_path, target_dir):
+    mlflow.set_tracking_uri(tracking_uri)
+    client = MlflowClient()
+    os.makedirs(target_dir, exist_ok=True)
+    local_path = client.download_artifacts(run_id, artifact_path, dst_path=target_dir)
+    if os.path.isdir(local_path):
+        raise IsADirectoryError(f"{artifact_path} is a directory")
+    return local_path
+
+
 def render_metric_plot(run_id, metric_name, history, width, height, xaxis_mode, experiment_id, run_name):
     experiment_id = str(experiment_id) if experiment_id else "-"
     run_name = str(run_name) if run_name else ""
@@ -373,6 +457,7 @@ def getMainPageMLflow(mlflow_tracking_uri):
     out.append("\" Press ? for help")
     out.append("")
     out.append("")
+    vim.vars['vim_mlflow_artifact_lineinfo'] = {}
     if verifyTrackingUrl(mlflow_tracking_uri, timeout=float(vim.eval("g:vim_mlflow_timeout"))):
         text, exptids = getMLflowExpts(mlflow_tracking_uri)
         out.extend(text)
@@ -394,6 +479,37 @@ def getMainPageMLflow(mlflow_tracking_uri):
               out.extend(getMetricsListForRun(mlflow_tracking_uri, vim.eval("s:current_runid")))
             if vim.eval("s:tags_are_showing")=="1":
               out.extend(getTagsListForRun(mlflow_tracking_uri, vim.eval("s:current_runid")))
+            if vim.eval("s:artifacts_are_showing") == "1":
+              expanded_json = vim.eval("json_encode(get(g:, 'vim_mlflow_artifact_expanded', {}))")
+              expanded = json.loads(expanded_json)
+              mark_icon = vim.eval("g:vim_mlflow_icon_markrun") or ">"
+              open_icon = vim.eval("g:vim_mlflow_icon_scrolldown") or "v"
+              divider_char = vim.eval("g:vim_mlflow_icon_vdivider") or "-"
+              max_depth = int(vim.eval("g:vim_mlflow_artifacts_max_depth"))
+              client = MlflowClient(tracking_uri=mlflow_tracking_uri)
+              tree = _collect_artifacts(client, vim.eval("s:current_runid"), max_depth=max_depth)
+              artifact_lines, artifact_info = _render_artifact_section(
+                  vim.eval("s:current_runid")[:5],
+                  tree,
+                  expanded,
+                  mark_icon,
+                  open_icon,
+                  divider_char,
+                  max_depth=max_depth,
+              )
+              start_line = len(out) + 1
+              lineinfo_map = {}
+              for entry in artifact_info:
+                  offset = entry.pop("offset")
+                  target_line = start_line + offset
+                  entry["line"] = target_line
+                  lineinfo_map[str(target_line)] = entry
+              vim.vars['vim_mlflow_artifact_lineinfo'] = lineinfo_map
+              out.extend(artifact_lines)
+            else:
+              vim.vars['vim_mlflow_artifact_lineinfo'] = {}
+        else:
+            vim.vars['vim_mlflow_artifact_lineinfo'] = {}
     else:
         out.append("Could not connect to mlflow_tracking_uri")
         out.append(mlflow_tracking_uri)
