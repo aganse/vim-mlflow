@@ -316,8 +316,10 @@ endfunction
 
 " Requery MLflow content and update buffer
 function! RefreshMLflowBuffer(doassign, ...)
+    " Optional args: [cursor_position], [reset_artifacts_flag]
     let l:curpos = getpos('.')
     let l:reset_artifacts = 0
+    " Allow callers to pass cursor position and/or reset flag via a:000.
     if len(a:000) >= 1
         if type(a:000[0]) == type([])
             let l:curpos = a:000[0]

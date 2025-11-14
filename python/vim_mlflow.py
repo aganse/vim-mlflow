@@ -3,6 +3,7 @@ from urllib.request import urlopen, Request
 import math
 import os
 import json
+import tempfile
 
 import mlflow
 from mlflow.entities import ViewType
@@ -268,9 +269,10 @@ def _collect_artifacts(client, run_id, path="", depth=0, max_depth=50):
     nodes = []
     try:
         actual_path = path or None
-        artifacts = client.list_artifacts(run_id, actual_path)
-        print("DEBUG: artifacts:")
-        print(artifacts)
+        if actual_path is None:
+            artifacts = client.list_artifacts(run_id)
+        else:
+            artifacts = client.list_artifacts(run_id, actual_path)
     except Exception:
         return nodes
     for item in sorted(artifacts, key=lambda a: a.path):
