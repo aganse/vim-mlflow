@@ -291,6 +291,8 @@ def render_metric_plot(run_id, metric_name, history, width, height, xaxis_mode):
 
     top_label = f"{y_max:.4g}".rjust(10)
     bottom_label = f"{y_min:.4g}".rjust(10)
+    vdivider = vim.eval("g:vim_mlflow_icon_vdivider") or "-"
+    hdivider = vim.eval("g:vim_mlflow_icon_hdivider") or "|"
     plot_body = []
     for idx, row_data in enumerate(grid):
         if idx == 0:
@@ -299,9 +301,9 @@ def render_metric_plot(run_id, metric_name, history, width, height, xaxis_mode):
             label = bottom_label + " "
         else:
             label = " " * 11
-        plot_body.append(label + "|" + "".join(row_data))
+        plot_body.append(label + hdivider + "".join(row_data))
 
-    axis_line = " " * 11 + "+" + "-" * width
+    axis_line = " " * 11 + "+" + vdivider * width
     x_min_str = f"{x_min:.4g}"
     x_max_str = f"{x_max:.4g}"
     middle_space = width - len(x_min_str) - len(x_max_str)
@@ -312,6 +314,7 @@ def render_metric_plot(run_id, metric_name, history, width, height, xaxis_mode):
     lines = []
     lines.append("")
     lines.extend(plot_body)
+    lines.append("")
     lines.append(axis_line)
     lines.append(x_bounds_line)
     lines.append("")

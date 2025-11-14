@@ -155,6 +155,7 @@ A list of vim-mlflow config variables that may be of interest to set in .vimrc
 | `g:vim_mlflow_icon_scrollup`     | Default is `'▲'` if `vim_mlflow_icon_useunicode` else `'^'`|
 | `g:vim_mlflow_icon_scrolldown`   | Default is `'▼'` if `vim_mlflow_icon_useunicode` else `'v'`|
 | `g:vim_mlflow_icon_markrun`      | Default is `'▶'` if `vim_mlflow_icon_useunicode` else `'>'`|
+| `g:vim_mlflow_icon_hdivider`     | Default is `'│'` if `vim_mlflow_icon_useunicode` else `'|'`|
 | `g:vim_mlflow_color_titles`      | Element highlight color label (default is `'Statement'`)|
 | `g:vim_mlflow_color_divlines`    | Element highlight color label (default is `'vimParenSep'`)|
 | `g:vim_mlflow_color_scrollicons `| Element highlight color label (default is `'vimParenSep'`)|
@@ -163,6 +164,9 @@ A list of vim-mlflow config variables that may be of interest to set in .vimrc
 | `g:vim_mlflow_color_help`        | Element highlight color label (default is `'Comment'`)|
 | `g:vim_mlflow_color_markrun`     | Element highlight color label (default is `'Statement'`)|
 | `g:vim_mlflow_color_hiddencol`   | Element highlight color label (default is `'Comment'`)|
+| `g:vim_mlflow_color_plot_title`  | Highlight group for plot titles (default `'Statement'`)|
+| `g:vim_mlflow_color_plot_axes`   | Highlight group for plot axes text (default `'vimParenSep'`)|
+| `g:vim_mlflow_color_plot_line`   | Highlight group for plot line glyphs (default `'Constant'`)|
 | `g:vim_mlflow_plot_height`       | ASCII plot height in rows when graphing metric history (default `25`)|
 | `g:vim_mlflow_plot_width`        | ASCII plot width in columns (default `60`)|
 | `g:vim_mlflow_plot_xaxis`        | `'step'` or `'timestamp'` for metric plot x-axis (default `'step'`)|
