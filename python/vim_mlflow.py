@@ -267,7 +267,8 @@ def _downsample_points(points, target_len):
 def _collect_artifacts(client, run_id, path="", depth=0, max_depth=50):
     nodes = []
     try:
-        artifacts = client.list_artifacts(run_id, path)
+        actual_path = path or None
+        artifacts = client.list_artifacts(run_id, actual_path)
     except Exception:
         return nodes
     for item in sorted(artifacts, key=lambda a: a.path):

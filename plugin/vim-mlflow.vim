@@ -170,7 +170,7 @@ function! RunMLflow()
     let s:runs_params_are_showing = 1
     let s:runs_metrics_are_showing = 1
     let s:runs_tags_are_showing = 1
-    let s:artifacts_are_showing = 0
+    let s:artifacts_are_showing = 1
     let s:artifact_lineinfo = {}
     let g:vim_mlflow_artifact_expanded = {}
     let s:markruns_list = []
@@ -405,6 +405,7 @@ function! ColorizeMLflowBuffer()
     call matchadd(g:vim_mlflow_color_titles, '^.*Runs in expt .*:')
     call matchadd(g:vim_mlflow_color_titles, 'Params in run .*:')
     call matchadd(g:vim_mlflow_color_titles, 'Metrics in run .*:')
+    call matchadd(g:vim_mlflow_color_titles, 'Artifacts in run .*:')
     call matchadd(g:vim_mlflow_color_titles, 'Tags in run .*:')
     if g:vim_mlflow_icon_vdivider != ''
         call matchadd(g:vim_mlflow_color_divlines, repeat(g:vim_mlflow_icon_vdivider, 4).'*')
