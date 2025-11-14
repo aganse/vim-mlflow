@@ -488,6 +488,7 @@ def getMainPageMLflow(mlflow_tracking_uri):
             if vim.eval("s:tags_are_showing")=="1":
               out.extend(getTagsListForRun(mlflow_tracking_uri, vim.eval("s:current_runid")))
             if vim.eval("s:artifacts_are_showing") == "1":
+              print(f"DEBUG: s:artifacts_are_showing==1")
               expanded_json = vim.eval("json_encode(get(g:, 'vim_mlflow_artifact_expanded', {}))")
               expanded = json.loads(expanded_json)
               mark_icon = vim.eval("g:vim_mlflow_icon_markrun") or ">"
@@ -496,6 +497,7 @@ def getMainPageMLflow(mlflow_tracking_uri):
               max_depth = int(vim.eval("g:vim_mlflow_artifacts_max_depth"))
               client = MlflowClient(tracking_uri=mlflow_tracking_uri)
               tree = _collect_artifacts(client, vim.eval("s:current_runid"), max_depth=max_depth)
+              print(f"DEBUG: in getMainPageMLflow(), artifacts tree: {tree}")
               artifact_lines, artifact_info = _render_artifact_section(
                   vim.eval("s:current_runid")[:5],
                   tree,
