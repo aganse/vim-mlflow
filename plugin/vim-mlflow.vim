@@ -77,12 +77,9 @@ function! s:EnsurePlotWindow(bufname)
         return s:plot_winid
     endif
 
-    let l:main_winnr = bufwinnr(g:vim_mlflow_buffername)
-    if l:main_winnr == -1
-        let l:main_winnr = winnr()
-    endif
-    execute l:main_winnr . 'wincmd w'
-    execute 'rightb vsplit ' . fnameescape(a:bufname)
+    let l:split_cmd = g:vim_mlflow_vside ==# 'left' ? 'vert botright' : 'vert topleft'
+    execute l:split_cmd . ' new'
+    execute 'file ' . fnameescape(a:bufname)
     let s:plot_winid = win_getid()
     return s:plot_winid
 endfunction
@@ -90,7 +87,11 @@ endfunction
 
 function! s:PopulatePlotBuffer(title, lines)
     setlocal buftype=nofile
-    setlocal bufhidden=wipe
+    if g:vim_mlflow_plot_reuse_buffer
+        setlocal bufhidden=wipe
+    else
+        setlocal bufhidden=hide
+    endif
     setlocal noswapfile
     setlocal nowrap
     setlocal modifiable
@@ -719,11 +720,15 @@ function! PlotMetricUnderCursor()
         echo "vim-mlflow: no run selected."
         return
     endif
-    if ! exists("s:metric_histories") || ! has_key(s:metric_histories, s:current_runid)
+    let l:all_histories = get(g:, 'vim_mlflow_metric_histories', {})
+    if type(l:all_histories) != type({})
+        let l:all_histories = {}
+    endif
+    if ! has_key(l:all_histories, s:current_runid)
         echo "vim-mlflow: metric history unavailable; try refreshing."
         return
     endif
-    let l:histories = s:metric_histories[s:current_runid]
+    let l:histories = l:all_histories[s:current_runid]
     if ! has_key(l:histories, l:metric)
         echo "vim-mlflow: metric history not found."
         return

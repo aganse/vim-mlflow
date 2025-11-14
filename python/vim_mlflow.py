@@ -1,6 +1,5 @@
 from datetime import datetime
 from urllib.request import urlopen, Request
-import json
 import math
 
 import mlflow
@@ -148,10 +147,8 @@ def getMetricsListForRun(mlflow_tracking_uri, current_runid):
             output_lines.append(f"  {k}: {v:.4g}{suffix}")
         output_lines.append("")
 
-        # Cache histories in a script-level dict so Vimscript can access them.
-        json_payload = json.dumps(metric_histories).replace("'", "''")
-        vim.command("let s:metric_histories = get(s:, 'metric_histories', {})")
-        vim.command(f"let s:metric_histories['{current_runid}'] = json_decode('{json_payload}')")
+        # Cache histories in a global dict so Vimscript can access them.
+        vim.vars['vim_mlflow_metric_histories'] = {current_runid: metric_histories}
         return output_lines
 
     except ModuleNotFoundError:
@@ -271,16 +268,30 @@ def render_metric_plot(run_id, metric_name, history, width, height, xaxis_mode):
     final_value = cleaned[-1]["value"]
 
     grid = [[" " for _ in range(width)] for _ in range(height)]
+    coords = []
     for x, y in points:
         col = int(round((x - x_min) / (x_max - x_min) * (width - 1)))
         row = height - 1 - int(round((y - y_min) / (y_max - y_min) * (height - 1)))
         col = max(0, min(width - 1, col))
         row = max(0, min(height - 1, row))
         grid[row][col] = "*"
+        coords.append((col, row))
+
+    for (c1, r1), (c2, r2) in zip(coords, coords[1:]):
+        dc = c2 - c1
+        dr = r2 - r1
+        steps = max(abs(dc), abs(dr))
+        if steps == 0:
+            continue
+        for step in range(1, steps):
+            col = int(round(c1 + step * dc / steps))
+            row = int(round(r1 + step * dr / steps))
+            if 0 <= col < width and 0 <= row < height and grid[row][col] == " ":
+                grid[row][col] = "*"
 
     top_label = f"{y_max:.4g}".rjust(10)
     bottom_label = f"{y_min:.4g}".rjust(10)
-    plot_lines = []
+    plot_body = []
     for idx, row_data in enumerate(grid):
         if idx == 0:
             label = top_label + " "
@@ -288,14 +299,27 @@ def render_metric_plot(run_id, metric_name, history, width, height, xaxis_mode):
             label = bottom_label + " "
         else:
             label = " " * 11
-        plot_lines.append(label + "".join(row_data))
+        plot_body.append(label + "|" + "".join(row_data))
 
-    plot_lines.append(" " * 11 + "-" * width)
-    plot_lines.append(f"x-axis ({x_label}) range: {x_min:.4g} -> {x_max:.4g}")
-    plot_lines.append(f"value range: {y_min:.4g} -> {y_max:.4g}  final: {final_value:.4g}")
-    plot_lines.append(f"points logged: {len(cleaned)}  plotted: {len(points)}")
+    axis_line = " " * 11 + "+" + "-" * width
+    x_min_str = f"{x_min:.4g}"
+    x_max_str = f"{x_max:.4g}"
+    middle_space = width - len(x_min_str) - len(x_max_str)
+    if middle_space < 1:
+        middle_space = 1
+    x_bounds_line = " " * 11 + x_min_str + " " * middle_space + x_max_str
 
-    return plot_lines, title
+    lines = []
+    lines.append("")
+    lines.extend(plot_body)
+    lines.append(axis_line)
+    lines.append(x_bounds_line)
+    lines.append("")
+    lines.append(f"x-axis ({x_label}) range: {x_min:.4g} -> {x_max:.4g}")
+    lines.append(f"value range: {y_min:.4g} -> {y_max:.4g}  final: {final_value:.4g}")
+    lines.append(f"points logged: {len(cleaned)}  plotted: {len(points)}")
+
+    return lines, title
 
 
 def getMainPageMLflow(mlflow_tracking_uri):
