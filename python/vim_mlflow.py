@@ -102,11 +102,13 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
                 mark = vim.eval("g:vim_mlflow_icon_markrun")
             runtags = run.data.tags
             runname = run.info.run_name if "mlflow.runName" in runtags else ""
+            status = run.info.status or "-"
+            user = runtags.get("mlflow.user") or run.info.user_id or "-"
             if view_type == ViewType.ALL:
                 stage_letter = lifecycles.get(run.info.lifecycle_stage, run.info.lifecycle_stage[:1].upper())
-                output_lines.append(f"{mark}#{run.info.run_id[:5]}: {stage_letter} {st}  {runname}")
+                output_lines.append(f"{mark}#{run.info.run_id[:5]}: {stage_letter} {st}  {status}  {user}  {runname}")
             else:
-                output_lines.append(f"{mark}#{run.info.run_id[:5]}: {st}  {runname}")
+                output_lines.append(f"{mark}#{run.info.run_id[:5]}: {st}  {status}  {user}  {runname}")
         if vim.eval("g:vim_mlflow_show_scrollicons"):
             if int(vim.eval("s:runs_first_idx")) == \
                int(vim.eval("s:num_runs-min([g:vim_mlflow_runs_length, s:num_runs])")):
