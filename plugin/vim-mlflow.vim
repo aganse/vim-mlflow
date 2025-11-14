@@ -52,6 +52,9 @@ function! SetDefaults()
     let g:vim_mlflow_plot_width = get(g:, 'vim_mlflow_plot_width', 60)
     let g:vim_mlflow_plot_xaxis = get(g:, 'vim_mlflow_plot_xaxis', 'step')
     let g:vim_mlflow_plot_reuse_buffer = get(g:, 'vim_mlflow_plot_reuse_buffer', 1)
+    let g:vim_mlflow_color_plot_title = get(g:, 'vim_mlflow_color_plot_title', 'Title')
+    let g:vim_mlflow_color_plot_axes = get(g:, 'vim_mlflow_color_plot_axes', 'Comment')
+    let g:vim_mlflow_color_plot_line = get(g:, 'vim_mlflow_color_plot_line', 'Constant')
 endfunction
 
 
@@ -100,7 +103,15 @@ function! s:PopulatePlotBuffer(title, lines)
     silent normal! gg"_dG
     call setline(1, [a:title] + a:lines)
     setlocal nomodifiable
+    call s:ColorizePlotBuffer()
     call cursor(1, 1)
+endfunction
+
+
+function! s:ColorizePlotBuffer()
+    call matchadd(g:vim_mlflow_color_plot_title, '\%1l.*')
+    call matchadd(g:vim_mlflow_color_plot_axes, '^[^*]*[|+].*')
+    call matchadd(g:vim_mlflow_color_plot_line, '\*')
 endfunction
 
 

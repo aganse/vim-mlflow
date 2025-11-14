@@ -1,5 +1,6 @@
 # vim-mlflow
 ![version](https://img.shields.io/badge/version-1.0.0-green.svg)
+
 A Vim plugin to browse the MLflow parameters and metrics from within Vim in a
 terminal instead of (or in additional to) the MLflow webapp GUI.
 
