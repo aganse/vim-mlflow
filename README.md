@@ -156,6 +156,8 @@ A list of vim-mlflow config variables that may be of interest to set in .vimrc
 | `g:vim_mlflow_icon_scrolldown`   | Default is `'▼'` if `vim_mlflow_icon_useunicode` else `'v'`|
 | `g:vim_mlflow_icon_markrun`      | Default is `'▶'` if `vim_mlflow_icon_useunicode` else `'>'`|
 | `g:vim_mlflow_icon_hdivider`     | Default is `'│'` if `vim_mlflow_icon_useunicode` else `'|'`|
+| `g:vim_mlflow_icon_plotpts`      | Default is `'●'` if `vim_mlflow_icon_useunicode` else `'*'`|
+| `g:vim_mlflow_icon_between_plotpts` | Default is `'•'` if `vim_mlflow_icon_useunicode` else `'.'`|
 | `g:vim_mlflow_color_titles`      | Element highlight color label (default is `'Statement'`)|
 | `g:vim_mlflow_color_divlines`    | Element highlight color label (default is `'vimParenSep'`)|
 | `g:vim_mlflow_color_scrollicons `| Element highlight color label (default is `'vimParenSep'`)|

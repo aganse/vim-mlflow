@@ -267,6 +267,8 @@ def render_metric_plot(run_id, metric_name, history, width, height, xaxis_mode):
         y_max = y_min + 1e-9
     final_value = cleaned[-1]["value"]
 
+    point_icon = vim.eval("g:vim_mlflow_icon_plotpts") or "*"
+    filler_icon = vim.eval("g:vim_mlflow_icon_between_plotpts") or "."
     grid = [[" " for _ in range(width)] for _ in range(height)]
     coords = []
     for x, y in points:
@@ -274,7 +276,7 @@ def render_metric_plot(run_id, metric_name, history, width, height, xaxis_mode):
         row = height - 1 - int(round((y - y_min) / (y_max - y_min) * (height - 1)))
         col = max(0, min(width - 1, col))
         row = max(0, min(height - 1, row))
-        grid[row][col] = "*"
+        grid[row][col] = point_icon
         coords.append((col, row))
 
     for (c1, r1), (c2, r2) in zip(coords, coords[1:]):
@@ -287,7 +289,7 @@ def render_metric_plot(run_id, metric_name, history, width, height, xaxis_mode):
             col = int(round(c1 + step * dc / steps))
             row = int(round(r1 + step * dr / steps))
             if 0 <= col < width and 0 <= row < height and grid[row][col] == " ":
-                grid[row][col] = "*"
+                grid[row][col] = filler_icon
 
     top_label = f"{y_max:.4g}".rjust(10)
     bottom_label = f"{y_min:.4g}".rjust(10)
@@ -314,7 +316,6 @@ def render_metric_plot(run_id, metric_name, history, width, height, xaxis_mode):
     lines = []
     lines.append("")
     lines.extend(plot_body)
-    lines.append("")
     lines.append(axis_line)
     lines.append(x_bounds_line)
     lines.append("")

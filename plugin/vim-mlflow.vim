@@ -34,6 +34,8 @@ function! SetDefaults()
         let g:vim_mlflow_icon_scrolldown = get(g:, 'vim_mlflow_icon_scrolldown', '▼')
         let g:vim_mlflow_icon_markrun = get(g:, 'vim_mlflow_icon_markrun', '▶')
         let g:vim_mlflow_icon_hdivider = get(g:, 'vim_mlflow_icon_hdivider', '│')
+        let g:vim_mlflow_icon_plotpts = get(g:, 'vim_mlflow_icon_plotpts', '●')
+        let g:vim_mlflow_icon_between_plotpts = get(g:, 'vim_mlflow_icon_between_plotpts', '•')
     else
         let g:vim_mlflow_icon_vdivider = get(g:, 'vim_mlflow_icon_vdivider', '-')
         let g:vim_mlflow_icon_scrollstop = get(g:, 'vim_mlflow_icon_scrollstop', '')
@@ -41,6 +43,8 @@ function! SetDefaults()
         let g:vim_mlflow_icon_scrolldown = get(g:, 'vim_mlflow_icon_scrolldown', 'v')
         let g:vim_mlflow_icon_markrun = get(g:, 'vim_mlflow_icon_markrun', '>')
         let g:vim_mlflow_icon_hdivider = get(g:, 'vim_mlflow_icon_hdivider', '|')
+        let g:vim_mlflow_icon_plotpts = get(g:, 'vim_mlflow_icon_plotpts', '*')
+        let g:vim_mlflow_icon_between_plotpts = get(g:, 'vim_mlflow_icon_between_plotpts', '.')
     endif
     let g:vim_mlflow_color_titles = get(g:, 'vim_mlflow_color_titles', 'Statement')
     let g:vim_mlflow_color_divlines = get(g:, 'vim_mlflow_color_divlines', 'vimParenSep')
@@ -112,8 +116,9 @@ endfunction
 
 function! s:ColorizePlotBuffer()
     call matchadd(g:vim_mlflow_color_plot_title, '\%1l.*')
-    call matchadd(g:vim_mlflow_color_plot_axes, '^[^*]*[|+].*')
-    call matchadd(g:vim_mlflow_color_plot_line, '\*')
+    call matchadd(g:vim_mlflow_color_plot_axes, escape(g:vim_mlflow_icon_hdivider, '\') . '\|' . escape(g:vim_mlflow_icon_vdivider, '\') . '\|+')
+    call matchadd(g:vim_mlflow_color_plot_line, escape(g:vim_mlflow_icon_plotpts, '\'))
+    call matchadd(g:vim_mlflow_color_plot_line, escape(g:vim_mlflow_icon_between_plotpts, '\'))
 endfunction
 
 
