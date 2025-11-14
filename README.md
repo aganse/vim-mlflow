@@ -162,7 +162,7 @@ A list of vim-mlflow config variables that may be of interest to set in .vimrc
 | `g:vim_mlflow_color_divlines`    | Element highlight color label (default is `'vimParenSep'`)|
 | `g:vim_mlflow_color_scrollicons `| Element highlight color label (default is `'vimParenSep'`)|
 | `g:vim_mlflow_color_selectedexpt`| Element highlight color label (default is `'String'`)|
-| `g:vim_mlflow_color_selectedrun `| Element highlight color label (default is `'Number'`)|
+| `g:vim_mlflow_color_selectedrun` | Element highlight color label (default is `'Number'`)|
 | `g:vim_mlflow_color_help`        | Element highlight color label (default is `'Comment'`)|
 | `g:vim_mlflow_color_markrun`     | Element highlight color label (default is `'Statement'`)|
 | `g:vim_mlflow_color_hiddencol`   | Element highlight color label (default is `'Comment'`)|

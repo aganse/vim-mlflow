@@ -58,10 +58,10 @@ function! SetDefaults()
     let g:vim_mlflow_plot_width = get(g:, 'vim_mlflow_plot_width', 60)
     let g:vim_mlflow_plot_xaxis = get(g:, 'vim_mlflow_plot_xaxis', 'step')
     let g:vim_mlflow_plot_reuse_buffer = get(g:, 'vim_mlflow_plot_reuse_buffer', 1)
-    let g:vim_mlflow_color_plot_title = get(g:, 'vim_mlflow_color_plot_title', 'Title')
-    let g:vim_mlflow_color_plot_axes = get(g:, 'vim_mlflow_color_plot_axes', 'Comment')
+    let g:vim_mlflow_color_plot_title = get(g:, 'vim_mlflow_color_plot_title', 'Statement')
+    let g:vim_mlflow_color_plot_axes = get(g:, 'vim_mlflow_color_plot_axes', 'vimParenSep')
     let g:vim_mlflow_color_plotpts = get(g:, 'vim_mlflow_color_plotpts', 'Constant')
-    let g:vim_mlflow_color_between_plotpts = get(g:, 'vim_mlflow_color_between_plotpts', 'Identifier')
+    let g:vim_mlflow_color_between_plotpts = get(g:, 'vim_mlflow_color_between_plotpts', 'Comment')
 endfunction
 
 
@@ -122,20 +122,20 @@ endfunction
 
 function! s:ColorizePlotBuffer()
     call matchadd(g:vim_mlflow_color_plot_title, '\%1l.*')
-    call matchadd(g:vim_mlflow_color_selectedexpt, '\%1lexpt #[^ ]*', 15)
-    call matchadd(g:vim_mlflow_color_selectedrun, '\%1lrun #[^ ]*', 15)
+    call matchadd(g:vim_mlflow_color_selectedexpt, '\%1l\zs#[0-9]\+\ze', 15)
+    call matchadd(g:vim_mlflow_color_selectedrun, '\%1l\zs#[0-9a-zA-Z]\{5}\ze', 15)
     if g:vim_mlflow_icon_hdivider != ''
-        call matchadd(g:vim_mlflow_color_plot_axes, escape(g:vim_mlflow_icon_hdivider, '\'))
+        call matchadd(g:vim_mlflow_color_plot_axes, '\V' . g:vim_mlflow_icon_hdivider)
     endif
     if g:vim_mlflow_icon_vdivider != ''
-        call matchadd(g:vim_mlflow_color_plot_axes, escape(g:vim_mlflow_icon_vdivider, '\'))
+        call matchadd(g:vim_mlflow_color_plot_axes, '\V' . g:vim_mlflow_icon_vdivider)
     endif
-    call matchadd(g:vim_mlflow_color_plot_axes, '\+')
+    call matchadd(g:vim_mlflow_color_plot_axes, '\V+')
     if g:vim_mlflow_icon_plotpts != ''
-        call matchadd(g:vim_mlflow_color_plotpts, escape(g:vim_mlflow_icon_plotpts, '\'))
+        call matchadd(g:vim_mlflow_color_plotpts, '\V' . g:vim_mlflow_icon_plotpts)
     endif
     if g:vim_mlflow_icon_between_plotpts != ''
-        call matchadd(g:vim_mlflow_color_between_plotpts, escape(g:vim_mlflow_icon_between_plotpts, '\'))
+        call matchadd(g:vim_mlflow_color_between_plotpts, '\V' . g:vim_mlflow_icon_between_plotpts)
     endif
 endfunction
 
