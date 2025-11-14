@@ -269,6 +269,8 @@ def _collect_artifacts(client, run_id, path="", depth=0, max_depth=50):
     try:
         actual_path = path or None
         artifacts = client.list_artifacts(run_id, actual_path)
+        print("DEBUG: artifacts:")
+        print(artifacts)
     except Exception:
         return nodes
     for item in sorted(artifacts, key=lambda a: a.path):
