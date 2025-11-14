@@ -1,5 +1,7 @@
 from datetime import datetime
 from urllib.request import urlopen, Request
+import json
+import math
 
 import mlflow
 from mlflow.entities import ViewType
@@ -126,12 +128,30 @@ def getMetricsListForRun(mlflow_tracking_uri, current_runid):
         client = MlflowClient(tracking_uri=mlflow_tracking_uri)
         run = client.get_run(current_runid)
 
+        metric_histories = {}
         output_lines = []
         output_lines.append(f"Metrics in run #{current_runid[:5]}:")
         output_lines.append(vim.eval("g:vim_mlflow_icon_vdivider")*30)
         for k,v in run.data.metrics.items():
-            output_lines.append(f"  {k}: {v:.4g}")
+            history = client.get_metric_history(current_runid, k)
+            metric_histories[k] = [
+                {
+                    "step": m.step,
+                    "timestamp": m.timestamp,
+                    "value": m.value,
+                }
+                for m in history
+            ]
+            suffix = ""
+            if len(history) > 1:
+                suffix = "  [final value; x here to plot]"
+            output_lines.append(f"  {k}: {v:.4g}{suffix}")
         output_lines.append("")
+
+        # Cache histories in a script-level dict so Vimscript can access them.
+        json_payload = json.dumps(metric_histories).replace("'", "''")
+        vim.command("let s:metric_histories = get(s:, 'metric_histories', {})")
+        vim.command(f"let s:metric_histories['{current_runid}'] = json_decode('{json_payload}')")
         return output_lines
 
     except ModuleNotFoundError:
@@ -170,6 +190,112 @@ def getTagsListForRun(mlflow_tracking_uri, current_runid):
 
     except ModuleNotFoundError:
         print('Sorry, `mlflow` is not installed. See :h vim-mlflow for more details on setup.')
+
+
+def _clean_metric_history(history):
+    cleaned = []
+    for idx, point in enumerate(history):
+        value = point.get("value")
+        if value is None:
+            continue
+        try:
+            val = float(value)
+        except (TypeError, ValueError):
+            continue
+        if isinstance(val, float) and math.isnan(val):
+            continue
+        entry = {
+            "value": val,
+            "step": point.get("step", idx),
+            "timestamp": point.get("timestamp"),
+        }
+        if entry["step"] is None:
+            entry["step"] = idx
+        cleaned.append(entry)
+    return cleaned
+
+
+def _downsample_points(points, target_len):
+    if len(points) <= target_len:
+        return points
+    ratio = len(points) / float(target_len)
+    downsampled = []
+    for i in range(target_len):
+        start = int(round(i * ratio))
+        end = int(round((i + 1) * ratio))
+        if end <= start:
+            end = start + 1
+        slice_points = points[start:end]
+        if not slice_points:
+            slice_points = points[start:start + 1]
+        avg_x = sum(p[0] for p in slice_points) / len(slice_points)
+        avg_y = sum(p[1] for p in slice_points) / len(slice_points)
+        downsampled.append((avg_x, avg_y))
+    return downsampled
+
+
+def render_metric_plot(run_id, metric_name, history, width, height, xaxis_mode):
+    cleaned = _clean_metric_history(history)
+    title = f"Metric {metric_name} for run #{run_id[:5]}"
+    if len(cleaned) <= 1:
+        return (["Metric has insufficient data points to plot."], title)
+
+    xaxis_mode = (xaxis_mode or "step").lower()
+    if xaxis_mode not in {"step", "timestamp"}:
+        xaxis_mode = "step"
+
+    if xaxis_mode == "timestamp" and all(pt.get("timestamp") is not None for pt in cleaned):
+        baseline = cleaned[0]["timestamp"]
+        xs = [(pt["timestamp"] - baseline) / 1000.0 for pt in cleaned]
+        x_label = "seconds (relative)"
+    else:
+        xs = [pt.get("step") for pt in cleaned]
+        x_label = "step"
+    xs = [idx if x is None else x for idx, x in enumerate(xs)]
+
+    points = list(zip(xs, (pt["value"] for pt in cleaned)))
+    width = max(10, int(width))
+    height = max(5, int(height))
+    points = _downsample_points(points, width)
+
+    x_min = min(p[0] for p in points)
+    x_max = max(p[0] for p in points)
+    if x_max == x_min:
+        x_max = x_min + 1.0
+
+    values = [pt["value"] for pt in cleaned]
+    y_min = min(values)
+    y_max = max(values)
+    if y_max == y_min:
+        y_max = y_min + 1e-9
+    final_value = cleaned[-1]["value"]
+
+    grid = [[" " for _ in range(width)] for _ in range(height)]
+    for x, y in points:
+        col = int(round((x - x_min) / (x_max - x_min) * (width - 1)))
+        row = height - 1 - int(round((y - y_min) / (y_max - y_min) * (height - 1)))
+        col = max(0, min(width - 1, col))
+        row = max(0, min(height - 1, row))
+        grid[row][col] = "*"
+
+    top_label = f"{y_max:.4g}".rjust(10)
+    bottom_label = f"{y_min:.4g}".rjust(10)
+    plot_lines = []
+    for idx, row_data in enumerate(grid):
+        if idx == 0:
+            label = top_label + " "
+        elif idx == height - 1:
+            label = bottom_label + " "
+        else:
+            label = " " * 11
+        plot_lines.append(label + "".join(row_data))
+
+    plot_lines.append(" " * 11 + "-" * width)
+    plot_lines.append(f"x-axis ({x_label}) range: {x_min:.4g} -> {x_max:.4g}")
+    plot_lines.append(f"value range: {y_min:.4g} -> {y_max:.4g}  final: {final_value:.4g}")
+    plot_lines.append(f"points logged: {len(cleaned)}  plotted: {len(points)}")
+
+    return plot_lines, title
 
 
 def getMainPageMLflow(mlflow_tracking_uri):

@@ -46,6 +46,71 @@ function! SetDefaults()
     let g:vim_mlflow_color_help = get(g:, 'vim_mlflow_color_help', 'Comment')
     let g:vim_mlflow_color_markrun = get(g:, 'vim_mlflow_color_markrun', 'Statement')
     let g:vim_mlflow_color_hiddencol = get(g:, 'vim_mlflow_color_hiddencol', 'Comment')
+    let g:vim_mlflow_plot_height = get(g:, 'vim_mlflow_plot_height', 25)
+    let g:vim_mlflow_plot_width = get(g:, 'vim_mlflow_plot_width', 60)
+    let g:vim_mlflow_plot_xaxis = get(g:, 'vim_mlflow_plot_xaxis', 'step')
+    let g:vim_mlflow_plot_reuse_buffer = get(g:, 'vim_mlflow_plot_reuse_buffer', 1)
+endfunction
+
+
+function! s:GetPlotBufferName()
+    if g:vim_mlflow_plot_reuse_buffer
+        return '__MLflowMetricPlot__'
+    endif
+    if ! exists('s:metric_plot_counter')
+        let s:metric_plot_counter = 1
+    else
+        let s:metric_plot_counter += 1
+    endif
+    return '__MLflowMetricPlot' . s:metric_plot_counter . '__'
+endfunction
+
+
+function! s:EnsurePlotWindow(bufname)
+    if exists('s:plot_winid') && win_gotoid(s:plot_winid)
+        if bufexists(a:bufname)
+            execute 'buffer ' . fnameescape(a:bufname)
+        else
+            execute 'enew'
+            execute 'file ' . fnameescape(a:bufname)
+        endif
+        return s:plot_winid
+    endif
+
+    let l:main_winnr = bufwinnr(g:vim_mlflow_buffername)
+    if l:main_winnr == -1
+        let l:main_winnr = winnr()
+    endif
+    execute l:main_winnr . 'wincmd w'
+    execute 'rightb vsplit ' . fnameescape(a:bufname)
+    let s:plot_winid = win_getid()
+    return s:plot_winid
+endfunction
+
+
+function! s:PopulatePlotBuffer(title, lines)
+    setlocal buftype=nofile
+    setlocal bufhidden=wipe
+    setlocal noswapfile
+    setlocal nowrap
+    setlocal modifiable
+    silent normal! gg"_dG
+    call setline(1, [a:title] + a:lines)
+    setlocal nomodifiable
+    call cursor(1, 1)
+endfunction
+
+
+function! s:OpenMetricPlotBuffer(title, lines)
+    let l:bufname = s:GetPlotBufferName()
+    let l:current_winid = win_getid()
+    let l:winid = s:EnsurePlotWindow(l:bufname)
+    call win_gotoid(l:winid)
+    call s:PopulatePlotBuffer(a:title, a:lines)
+    " widen window if needed for plot width + margins
+    let l:desired_width = g:vim_mlflow_plot_width + 12
+    execute 'vertical resize ' . l:desired_width
+    call win_gotoid(l:current_winid)
 endfunction
 
 
@@ -102,6 +167,7 @@ function! RunMLflow()
     nmap <buffer>  ?     :call ListHelpMsg()<CR>
     nmap <buffer>  <CR>  :call RefreshMLflowBuffer(1)<CR>
     nmap <buffer>  <space>  :call MarkRun()<CR>
+    nmap <buffer>  x     :call PlotMetricUnderCursor()<CR>
     nmap <buffer>  o     :call RefreshMLflowBuffer(1)<CR>
     nmap <buffer>  r     :call RefreshMLflowBuffer(0)<CR>
     nmap <buffer>  R     :call OpenRunsWindow()<CR>
@@ -523,6 +589,7 @@ function! ListHelpMsg()
         \'" o  :  enter expt or run under cursor',
         \'" <enter> :   "    "    "',
         \'" <space> :  mark run under cursor',
+        \'" x  :  plot metric under cursor (if available)',
         \'" R  :  open marked-runs buffer',
         \'" A  :  cycle Active/Deleted/Total view',
         \'" n  :  scroll down list under cursor',
@@ -638,4 +705,81 @@ EOF
 
 let mlflowruns = py3eval('mlflowruns')
 return mlflowruns
+endfunction
+" Plot metric history when cursor is on metrics line
+function! PlotMetricUnderCursor()
+    let l:curline = getline('.')
+    let l:match = matchlist(l:curline, '\m^\s\+\(\S\+\):')
+    if empty(l:match)
+        echo "vim-mlflow: no metric under cursor."
+        return
+    endif
+    let l:metric = l:match[1]
+    if ! exists("s:current_runid") || s:current_runid == ""
+        echo "vim-mlflow: no run selected."
+        return
+    endif
+    if ! exists("s:metric_histories") || ! has_key(s:metric_histories, s:current_runid)
+        echo "vim-mlflow: metric history unavailable; try refreshing."
+        return
+    endif
+    let l:histories = s:metric_histories[s:current_runid]
+    if ! has_key(l:histories, l:metric)
+        echo "vim-mlflow: metric history not found."
+        return
+    endif
+    let l:history = l:histories[l:metric]
+    if len(l:history) <= 1
+        echo "vim-mlflow: metric has no series to plot."
+        return
+    endif
+    if ! exists('*json_encode')
+        echo "vim-mlflow: json support is required for plotting."
+        return
+    endif
+    let l:history_json = json_encode(l:history)
+
+    " Render the plot via python helper
+python3 << EOF
+import os, sys, json
+from os.path import normpath, join
+import vim
+if 'VIRTUAL_ENV' in os.environ:
+    project_base_dir = os.environ['VIRTUAL_ENV']
+    py_version_dir = 'python{}.{}'.format(sys.version_info.major, sys.version_info.minor)
+    sys.path.insert(0, join(project_base_dir, 'lib', py_version_dir, 'site-packages'))
+
+plugin_root_dir = vim.eval('s:plugin_root_dir')
+python_root_dir = normpath(join(plugin_root_dir, '..', 'python'))
+sys.path.insert(0, python_root_dir)
+
+import vim_mlflow
+
+history = json.loads(vim.eval('l:history_json'))
+metric = vim.eval('l:metric')
+run_id = vim.eval('s:current_runid')
+plot_width = int(vim.eval('g:vim_mlflow_plot_width'))
+plot_height = int(vim.eval('g:vim_mlflow_plot_height'))
+xaxis_mode = vim.eval('g:vim_mlflow_plot_xaxis')
+lines, title = vim_mlflow.render_metric_plot(run_id, metric, history, plot_width, plot_height, xaxis_mode)
+vim.vars['vim_mlflow_plot_lines'] = lines
+vim.vars['vim_mlflow_plot_title'] = title
+EOF
+    if ! exists('g:vim_mlflow_plot_lines')
+        echo "vim-mlflow: failed to generate plot."
+        return
+    endif
+    let l:plot_lines = get(g:, 'vim_mlflow_plot_lines', [])
+    if empty(l:plot_lines)
+        echo "vim-mlflow: no plot data available."
+        return
+    endif
+    let l:plot_title = get(g:, 'vim_mlflow_plot_title', '')
+    call s:OpenMetricPlotBuffer(l:plot_title, l:plot_lines)
+    if exists('g:vim_mlflow_plot_lines')
+        unlet g:vim_mlflow_plot_lines
+    endif
+    if exists('g:vim_mlflow_plot_title')
+        unlet g:vim_mlflow_plot_title
+    endif
 endfunction

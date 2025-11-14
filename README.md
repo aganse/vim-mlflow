@@ -69,8 +69,10 @@ movement keys; select experiments and runs with `o` or `enter`.  Note the help
 listing via `?` to learn more keys to select, choose, and toggle parts of the
 display.  You can select some runs (across multiple experiments) and open them
 in an `__MLflowRuns__` pane to allow further browsing, formatting, and comparing
-of them in columns.  All the details are extensively configurable, including
-layout and characters used in the display and color highlighting.
+of them in columns.  When hovering over a metric that was logged multiple times,
+press `x` to open an ASCII plot of its history in the right-hand pane. All the
+details are extensively configurable, including layout and characters used in
+the display and color highlighting.
 
 
 ## Installation
@@ -159,6 +161,10 @@ A list of vim-mlflow config variables that may be of interest to set in .vimrc
 | `g:vim_mlflow_color_help`        | Element highlight color label (default is `'Comment'`)|
 | `g:vim_mlflow_color_markrun`     | Element highlight color label (default is `'Statement'`)|
 | `g:vim_mlflow_color_hiddencol`   | Element highlight color label (default is `'Comment'`)|
+| `g:vim_mlflow_plot_height`       | ASCII plot height in rows when graphing metric history (default `25`)|
+| `g:vim_mlflow_plot_width`        | ASCII plot width in columns (default `60`)|
+| `g:vim_mlflow_plot_xaxis`        | `'step'` or `'timestamp'` for metric plot x-axis (default `'step'`)|
+| `g:vim_mlflow_plot_reuse_buffer` | If `1`, reuse a single `__MLflowMetricPlot__` buffer; if `0`, create sequential plot buffers (default `1`)|
 
 
 ## Acknowledgements
