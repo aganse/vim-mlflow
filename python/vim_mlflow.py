@@ -325,7 +325,8 @@ def render_metric_plot(run_id, metric_name, history, width, height, xaxis_mode):
 def getMainPageMLflow(mlflow_tracking_uri):
 
     out = []
-    out.append("Vim-MLflow")
+    version = vim.eval("get(g:, 'vim_mlflow_version', 'dev')")
+    out.append(f"Vim-MLflow v{version}")
     out.append("\" Press ? for help")
     out.append("")
     out.append("")
