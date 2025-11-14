@@ -92,6 +92,7 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
         runs = sorted(runs, key=lambda r: r.info.start_time, reverse=True)
         beginrun_idx = int(vim.eval("s:runs_first_idx"))
         endrun_idx = int(vim.eval("s:runs_first_idx"))+int(vim.eval("g:vim_mlflow_runs_length"))
+        visible_rows = []
         for run in runs[beginrun_idx: endrun_idx]:
             if run.info.start_time:
                 st = datetime.utcfromtimestamp(run.info.start_time/1e3).strftime("%Y-%m-%d %H:%M:%S")
@@ -104,11 +105,34 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
             runname = run.info.run_name if "mlflow.runName" in runtags else ""
             status = run.info.status or "-"
             user = runtags.get("mlflow.user") or run.info.user_id or "-"
+            stage_letter = ""
             if view_type == ViewType.ALL:
                 stage_letter = lifecycles.get(run.info.lifecycle_stage, run.info.lifecycle_stage[:1].upper())
-                output_lines.append(f"{mark}#{run.info.run_id[:5]}: {stage_letter} {st}  {status}  {user}  {runname}")
-            else:
-                output_lines.append(f"{mark}#{run.info.run_id[:5]}: {st}  {status}  {user}  {runname}")
+            visible_rows.append(
+                {
+                    "mark": mark,
+                    "run_id": run.info.run_id[:5],
+                    "stage": stage_letter,
+                    "start": st,
+                    "status": status,
+                    "user": user,
+                    "name": runname,
+                }
+            )
+
+        if visible_rows:
+            status_width = max(len(row["status"]) for row in visible_rows)
+            user_width = max(len(row["user"]) for row in visible_rows)
+        else:
+            status_width = user_width = 1
+
+        for row in visible_rows:
+            stage_prefix = f"{row['stage']} " if row["stage"] else ""
+            status_col = row["status"].ljust(status_width)
+            user_col = row["user"].ljust(user_width)
+            output_lines.append(
+                f"{row['mark']}#{row['run_id']}: {stage_prefix}{row['start']}  {status_col}  {user_col}  {row['name']}"
+            )
         if vim.eval("g:vim_mlflow_show_scrollicons"):
             if int(vim.eval("s:runs_first_idx")) == \
                int(vim.eval("s:num_runs-min([g:vim_mlflow_runs_length, s:num_runs])")):
@@ -151,6 +175,11 @@ def getMetricsListForRun(mlflow_tracking_uri, current_runid):
 
         # Cache histories in a global dict so Vimscript can access them.
         vim.vars['vim_mlflow_metric_histories'] = {current_runid: metric_histories}
+        vim.vars['vim_mlflow_current_runinfo'] = {
+            "run_id": run.info.run_id,
+            "run_name": run.info.run_name or "",
+            "experiment_id": run.info.experiment_id,
+        }
         return output_lines
 
     except ModuleNotFoundError:
@@ -233,9 +262,18 @@ def _downsample_points(points, target_len):
     return downsampled
 
 
-def render_metric_plot(run_id, metric_name, history, width, height, xaxis_mode):
+def render_metric_plot(run_id, metric_name, history, width, height, xaxis_mode, experiment_id, run_name):
+    experiment_id = str(experiment_id) if experiment_id else "-"
+    run_name = str(run_name) if run_name else ""
     cleaned = _clean_metric_history(history)
-    title = f"Metric {metric_name} for run #{run_id[:5]}"
+    width = max(10, int(width))
+    run_prefix = f"Metric {metric_name} for expt #{experiment_id} run #{run_id[:5]}"
+    max_title_len = 11 + width
+    available = max_title_len - len(run_prefix) - 1
+    if run_name and available > 0:
+        title = f"{run_prefix} {run_name[:available]}"
+    else:
+        title = run_prefix
     if len(cleaned) <= 1:
         return (["Metric has insufficient data points to plot."], title)
 
@@ -253,7 +291,6 @@ def render_metric_plot(run_id, metric_name, history, width, height, xaxis_mode):
     xs = [idx if x is None else x for idx, x in enumerate(xs)]
 
     points = list(zip(xs, (pt["value"] for pt in cleaned)))
-    width = max(10, int(width))
     height = max(5, int(height))
     points = _downsample_points(points, width)
 

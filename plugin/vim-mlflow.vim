@@ -58,9 +58,15 @@ function! SetDefaults()
     let g:vim_mlflow_plot_width = get(g:, 'vim_mlflow_plot_width', 60)
     let g:vim_mlflow_plot_xaxis = get(g:, 'vim_mlflow_plot_xaxis', 'step')
     let g:vim_mlflow_plot_reuse_buffer = get(g:, 'vim_mlflow_plot_reuse_buffer', 1)
-    let g:vim_mlflow_color_plot_title = get(g:, 'vim_mlflow_color_plot_title', 'Statement')
-    let g:vim_mlflow_color_plot_axes = get(g:, 'vim_mlflow_color_plot_axes', 'vimParenSep')
-    let g:vim_mlflow_color_plot_line = get(g:, 'vim_mlflow_color_plot_line', 'Constant')
+    let g:vim_mlflow_color_plot_title = get(g:, 'vim_mlflow_color_plot_title', 'Title')
+    let g:vim_mlflow_color_plot_axes = get(g:, 'vim_mlflow_color_plot_axes', 'Comment')
+    let g:vim_mlflow_color_plotpts = get(g:, 'vim_mlflow_color_plotpts', 'Constant')
+    let g:vim_mlflow_color_between_plotpts = get(g:, 'vim_mlflow_color_between_plotpts', 'Identifier')
+endfunction
+
+
+function! s:GetMainTitle()
+    return 'Vim-MLflow v' . get(g:, 'vim_mlflow_version', 'dev')
 endfunction
 
 
@@ -116,9 +122,21 @@ endfunction
 
 function! s:ColorizePlotBuffer()
     call matchadd(g:vim_mlflow_color_plot_title, '\%1l.*')
-    call matchadd(g:vim_mlflow_color_plot_axes, escape(g:vim_mlflow_icon_hdivider, '\') . '\|' . escape(g:vim_mlflow_icon_vdivider, '\') . '\|+')
-    call matchadd(g:vim_mlflow_color_plot_line, escape(g:vim_mlflow_icon_plotpts, '\'))
-    call matchadd(g:vim_mlflow_color_plot_line, escape(g:vim_mlflow_icon_between_plotpts, '\'))
+    call matchadd(g:vim_mlflow_color_selectedexpt, '\%1lexpt #[^ ]*', 15)
+    call matchadd(g:vim_mlflow_color_selectedrun, '\%1lrun #[^ ]*', 15)
+    if g:vim_mlflow_icon_hdivider != ''
+        call matchadd(g:vim_mlflow_color_plot_axes, escape(g:vim_mlflow_icon_hdivider, '\'))
+    endif
+    if g:vim_mlflow_icon_vdivider != ''
+        call matchadd(g:vim_mlflow_color_plot_axes, escape(g:vim_mlflow_icon_vdivider, '\'))
+    endif
+    call matchadd(g:vim_mlflow_color_plot_axes, '\+')
+    if g:vim_mlflow_icon_plotpts != ''
+        call matchadd(g:vim_mlflow_color_plotpts, escape(g:vim_mlflow_icon_plotpts, '\'))
+    endif
+    if g:vim_mlflow_icon_between_plotpts != ''
+        call matchadd(g:vim_mlflow_color_between_plotpts, escape(g:vim_mlflow_icon_between_plotpts, '\'))
+    endif
 endfunction
 
 
@@ -602,8 +620,9 @@ endfunction
 
 
 function! ListHelpMsg()
+    let l:title = s:GetMainTitle()
     let s:helptext = [
-        \'Vim-MLflow',
+        \l:title,
         \'" ------------------------',
         \'" ?  :  toggle help listing',
         \'" r  :  requery MLflow display',
@@ -632,7 +651,7 @@ function! ListHelpMsg()
     else
         execute "normal! 1G". len(s:helptext) . "dd"
         call append(line('^'), '" Press ? for help')
-        call append(line('^'), 'Vim-MLflow')
+        call append(line('^'), l:title)
         let s:help_msg_is_showing = 0
     endif
     redraw
@@ -763,6 +782,11 @@ function! PlotMetricUnderCursor()
         return
     endif
     let l:history_json = json_encode(l:history)
+    let l:runinfo = get(g:, 'vim_mlflow_current_runinfo', {})
+    let l:run_name = get(l:runinfo, 'run_name', '')
+    let l:experiment_id = get(l:runinfo, 'experiment_id', '')
+    let l:run_name = '' . l:run_name
+    let l:experiment_id = '' . l:experiment_id
 
     " Render the plot via python helper
 python3 << EOF
@@ -786,7 +810,9 @@ run_id = vim.eval('s:current_runid')
 plot_width = int(vim.eval('g:vim_mlflow_plot_width'))
 plot_height = int(vim.eval('g:vim_mlflow_plot_height'))
 xaxis_mode = vim.eval('g:vim_mlflow_plot_xaxis')
-lines, title = vim_mlflow.render_metric_plot(run_id, metric, history, plot_width, plot_height, xaxis_mode)
+experiment_id = vim.eval('l:experiment_id')
+run_name = vim.eval('l:run_name')
+lines, title = vim_mlflow.render_metric_plot(run_id, metric, history, plot_width, plot_height, xaxis_mode, experiment_id, run_name)
 vim.vars['vim_mlflow_plot_lines'] = lines
 vim.vars['vim_mlflow_plot_title'] = title
 EOF
