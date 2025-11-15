@@ -67,6 +67,11 @@ function! SetDefaults()
     let g:vim_mlflow_section_order = get(g:, 'vim_mlflow_section_order', ['params', 'metrics', 'tags', 'artifacts'])
     if type(g:vim_mlflow_section_order) != type([])
         let g:vim_mlflow_section_order = ['params', 'metrics', 'tags', 'artifacts']
+    else
+        let g:vim_mlflow_section_order = filter(copy(g:vim_mlflow_section_order), {_, v -> index(['params', 'metrics', 'tags', 'artifacts'], v) != -1})
+        if empty(g:vim_mlflow_section_order)
+            let g:vim_mlflow_section_order = ['params', 'metrics', 'tags', 'artifacts']
+        endif
     endif
 endfunction
 
@@ -765,8 +770,15 @@ return mlflowruns
 endfunction
 " Plot metric history when cursor is on metrics line
 function! HandleMetricPlotUnderCursor()
+    let l:line = line('.')
     let l:curline = getline('.')
     let l:metric_lines = get(g:, 'vim_mlflow_metric_lines', [])
+    if type(l:metric_lines) != type([])
+        let l:metric_lines = []
+    endif
+    if empty(l:metric_lines)
+        return 0
+    endif
     if index(l:metric_lines, l:line) == -1
         return 0
     endif
@@ -893,6 +905,10 @@ function! MLflowSelect()
     if MLflowActionUnderCursor()
         return
     endif
+    let l:kind = s:GetLineAction()
+    if l:kind ==# ''
+        return
+    endif
     call RefreshMLflowBuffer(1)
 endfunction
 
@@ -903,7 +919,7 @@ endfunction
 
 
 function! RotateMLflowSections()
-    let l:order = copy(g:vim_mlflow_section_order)
+    let l:order = filter(copy(g:vim_mlflow_section_order), {_, v -> index(['params', 'metrics', 'tags', 'artifacts'], v) != -1})
     if empty(l:order)
         let l:order = ['params', 'metrics', 'tags', 'artifacts']
     endif
@@ -935,6 +951,18 @@ function! ToggleSection(section)
     endif
     call s:ToggleSectionInternal(a:section)
     call RefreshMLflowBuffer(0)
+endfunction
+
+
+function! s:GetLineAction()
+    let l:line = getline('.')
+    if l:line =~# '^\s*#\d\+:'
+        return 'experiment'
+    endif
+    if l:line =~# '^\s*\S*#\x\{5}:'  " run id is 5 hex chars
+        return 'run'
+    endif
+    return ''
 endfunction
 
 
@@ -1010,7 +1038,7 @@ function! s:ShowArtifactBuffer(path, localpath)
     if l:winnr == -1
         let l:scratch = s:FindScratchWindow()
         if l:scratch != -1
-            call win_gotoid(l:scratch)
+            execute l:scratch . 'wincmd w'
             execute 'enew'
         else
             if g:vim_mlflow_vside ==# 'left'
@@ -1063,7 +1091,7 @@ function! s:FindScratchWindow()
             continue
         let l:name = bufname(l:buf)
         if empty(l:name) && getbufvar(l:buf, '&buftype') == ''
-            return win_getid(l:w)
+            return l:w
         endif
     endfor
     return -1
