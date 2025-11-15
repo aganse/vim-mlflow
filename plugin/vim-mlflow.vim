@@ -1033,12 +1033,13 @@ endfunction
 
 
 function! s:ShowArtifactBuffer(path, localpath)
+    let l:current_win = win_getid()
     let l:bufname = 'artifact://' . a:path
     let l:winnr = bufwinnr(l:bufname)
     if l:winnr == -1
         let l:scratch = s:FindScratchWindow()
         if l:scratch != -1
-            execute l:scratch . 'wincmd w'
+            call win_gotoid(l:scratch)
             execute 'enew'
         else
             if g:vim_mlflow_vside ==# 'left'
@@ -1065,6 +1066,7 @@ function! s:ShowArtifactBuffer(path, localpath)
     call s:SetBufferFiletype(a:path)
     setlocal nomodifiable
     call cursor(1, 1)
+    call win_gotoid(l:current_win)
 endfunction
 
 
@@ -1091,7 +1093,7 @@ function! s:FindScratchWindow()
             continue
         let l:name = bufname(l:buf)
         if empty(l:name) && getbufvar(l:buf, '&buftype') == ''
-            return l:w
+            return win_getid(l:w)
         endif
     endfor
     return -1
