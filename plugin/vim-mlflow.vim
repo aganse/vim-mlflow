@@ -1093,7 +1093,7 @@ function! s:FindScratchWindow()
             continue
         endif
         let l:name = bufname(l:buf)
-        if empty(l:name) && getbufvar(l:buf, '&buftype') == ''
+        if (empty(l:name) || l:name =~? '^artifact://') && getbufvar(l:buf, '&buftype') == ''
             return win_getid(l:w)
         endif
     endfor
