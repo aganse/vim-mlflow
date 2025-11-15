@@ -183,6 +183,7 @@ function! RunMLflow()
   
     " Set the defaults for all the user-specifiable options
     call SetDefaults()
+    let g:vim_mlflow_section_order = ['params', 'metrics', 'tags', 'artifacts']
   
     if bufwinnr(g:vim_mlflow_buffername) == -1
         " Open a new split on specified side
@@ -209,16 +210,16 @@ function! RunMLflow()
   
     " Map certain key input to vim-mlflow features within buffer
     nmap <buffer>  ?     :call ListHelpMsg()<CR>
-    nmap <buffer>  <CR>  :call RefreshMLflowBuffer(1)<CR>
+    nmap <buffer>  <CR>  :call MLflowSelect()<CR>
     nmap <buffer>  <space>  :call MarkRun()<CR>
-    nmap <buffer>  x     :call MLflowActionUnderCursor()<CR>
-    nmap <buffer>  o     :call RefreshMLflowBuffer(1)<CR>
+    nmap <buffer>  o     :call MLflowSelect()<CR>
     nmap <buffer>  r     :call RefreshMLflowBuffer(0, 1)<CR>
     nmap <buffer>  R     :call OpenRunsWindow()<CR>
     nmap <buffer>  <C-p> :call ToggleMLParamsDisplay()<CR>
     nmap <buffer>  <C-e> :call ToggleMLMetricsDisplay()<CR>
     nmap <buffer>  <C-t> :call ToggleMLTagsDisplay()<CR>
     nmap <buffer>  <C-a> :call ToggleMLArtifactsDisplay()<CR>
+    nmap <buffer>  @     :call RotateMLflowSections()<CR>
     nmap <buffer>  A     :call CycleActiveDeletedAll()<CR>
     nmap <buffer>  n     :call ScrollListDown()<CR>
     nmap <buffer>  p     :call ScrollListUp()<CR>
@@ -583,7 +584,7 @@ function! ToggleMLParamsDisplay()
     else
         let s:params_are_showing = 0
     endif
-    call RefreshMLflowBuffer(1)
+    call RefreshMLflowBuffer(1, 0)
 endfunction
 
 
@@ -593,7 +594,7 @@ function! ToggleMLMetricsDisplay()
     else
         let s:metrics_are_showing = 0
     endif
-    call RefreshMLflowBuffer(1)
+    call RefreshMLflowBuffer(1, 0)
 endfunction
 
 
@@ -603,7 +604,7 @@ function! ToggleMLTagsDisplay()
     else
         let s:tags_are_showing = 0
     endif
-    call RefreshMLflowBuffer(1)
+    call RefreshMLflowBuffer(1, 0)
 endfunction
 
 
@@ -653,10 +654,9 @@ function! ListHelpMsg()
         \'" ------------------------',
         \'" ?  :  toggle help listing',
         \'" r  :  requery MLflow display',
-        \'" o  :  enter expt or run under cursor',
+        \'" o  :  open expt/run/plot/artifact under cursor',
         \'" <enter> :   "    "    "',
         \'" <space> :  mark run under cursor',
-        \'" x  :  open plot or artifact under cursor',
         \'" R  :  open marked-runs buffer',
         \'" A  :  cycle Active/Deleted/Total view',
         \'" n  :  scroll down list under cursor',
@@ -667,6 +667,7 @@ function! ListHelpMsg()
         \'" ^e :  toggle display of metrics',
         \'" ^t :  toggle display of tags',
         \'" ^a :  toggle display of artifacts',
+        \'" @  :  rotate order of detail sections',
         \'" ------------------------',
         \'" Press ? to remove help',
         \]
@@ -777,15 +778,17 @@ endfunction
 " Plot metric history when cursor is on metrics line
 function! HandleMetricPlotUnderCursor()
     let l:curline = getline('.')
+    if l:curline !~# '^\s\+\S\+:'
+        return 0
+    endif
     let l:match = matchlist(l:curline, '\m^\s\+\(\S\+\):')
     if empty(l:match)
-        echo "vim-mlflow: no metric under cursor."
-        return
+        return 0
     endif
     let l:metric = l:match[1]
     if ! exists("s:current_runid") || s:current_runid == ""
         echo "vim-mlflow: no run selected."
-        return
+        return 1
     endif
     let l:all_histories = get(g:, 'vim_mlflow_metric_histories', {})
     if type(l:all_histories) != type({})
@@ -793,21 +796,21 @@ function! HandleMetricPlotUnderCursor()
     endif
     if ! has_key(l:all_histories, s:current_runid)
         echo "vim-mlflow: metric history unavailable; try refreshing."
-        return
+        return 1
     endif
     let l:histories = l:all_histories[s:current_runid]
     if ! has_key(l:histories, l:metric)
         echo "vim-mlflow: metric history not found."
-        return
+        return 1
     endif
     let l:history = l:histories[l:metric]
     if len(l:history) <= 1
         echo "vim-mlflow: metric has no series to plot."
-        return
+        return 1
     endif
     if ! exists('*json_encode')
         echo "vim-mlflow: json support is required for plotting."
-        return
+        return 1
     endif
     let l:history_json = json_encode(l:history)
     let l:runinfo = get(g:, 'vim_mlflow_current_runinfo', {})
@@ -846,12 +849,12 @@ vim.vars['vim_mlflow_plot_title'] = title
 EOF
     if ! exists('g:vim_mlflow_plot_lines')
         echo "vim-mlflow: failed to generate plot."
-        return
+        return 1
     endif
     let l:plot_lines = get(g:, 'vim_mlflow_plot_lines', [])
     if empty(l:plot_lines)
         echo "vim-mlflow: no plot data available."
-        return
+        return 1
     endif
     let l:plot_title = get(g:, 'vim_mlflow_plot_title', '')
     call s:OpenMetricPlotBuffer(l:plot_title, l:plot_lines)
@@ -861,6 +864,7 @@ EOF
     if exists('g:vim_mlflow_plot_title')
         unlet g:vim_mlflow_plot_title
     endif
+    return 1
 endfunction
 
 
@@ -878,9 +882,17 @@ function! MLflowActionUnderCursor()
                 echo "vim-mlflow: artifact not opened (unsupported type)."
             endif
         endif
+        return 1
+    endif
+    return HandleMetricPlotUnderCursor()
+endfunction
+
+
+function! MLflowSelect()
+    if MLflowActionUnderCursor()
         return
     endif
-    call HandleMetricPlotUnderCursor()
+    call RefreshMLflowBuffer(1)
 endfunction
 
 
@@ -893,6 +905,17 @@ function! ToggleMLArtifactsDisplay()
     let g:vim_mlflow_artifact_expanded = {}
     let g:vim_mlflow_artifact_lineinfo = {}
     let s:artifact_lineinfo = {}
+    call RefreshMLflowBuffer(0)
+endfunction
+
+
+function! RotateMLflowSections()
+    let l:order = copy(g:vim_mlflow_section_order)
+    if empty(l:order)
+        let l:order = ['params', 'metrics', 'tags', 'artifacts']
+    endif
+    call add(l:order, remove(l:order, 0))
+    let g:vim_mlflow_section_order = l:order
     call RefreshMLflowBuffer(0)
 endfunction
 
@@ -956,44 +979,68 @@ EOF
         unlet g:vim_mlflow_artifact_error
     endif
     if filereadable(l:local)
-        let l:lines = readfile(l:local)
-        call s:ShowArtifactBuffer(a:path, l:lines)
+        call s:ShowArtifactBuffer(a:path, l:local)
     else
         echo "vim-mlflow: artifact not readable."
     endif
 endfunction
 
 
-function! s:ShowArtifactBuffer(path, lines)
-    let l:bufname = '__MLflowArtifact__'
+function! s:ShowArtifactBuffer(path, localpath)
+    let l:bufname = 'artifact://' . a:path
     let l:winnr = bufwinnr(l:bufname)
     if l:winnr == -1
         let l:scratch = s:FindScratchWindow()
         if l:scratch != -1
             call win_gotoid(l:scratch)
             execute 'enew'
-            execute 'file ' . l:bufname
         else
             if g:vim_mlflow_vside ==# 'left'
-                execute 'vert botright split ' . l:bufname
+                execute 'vert botright split'
             else
-                execute 'vert topleft split ' . l:bufname
+                execute 'vert topleft split'
             endif
         endif
     else
         execute l:winnr . 'wincmd w'
+        setlocal modifiable
     endif
+    execute 'file ' . fnameescape(l:bufname)
     setlocal buftype=nofile
     setlocal bufhidden=wipe
     setlocal noswapfile
     setlocal modifiable
-    silent keepjumps %d
-    call setline(1, ['Artifact: ' . a:path])
-    if !empty(a:lines)
-        call append(1, a:lines)
+    let l:content = readfile(a:localpath)
+    if empty(l:content)
+        let l:content = ['']
     endif
+    call setline(1, l:content)
+    if line('$') > len(l:content)
+        if exists('*deletebufline')
+            call deletebufline('%', len(l:content)+1, '$')
+        else
+            execute (len(l:content)+1) . ',$delete _'
+        endif
+    endif
+    call s:SetBufferFiletype(a:path)
     setlocal nomodifiable
-    call cursor(2, 1)
+    call cursor(1, 1)
+endfunction
+
+
+function! s:SetBufferFiletype(path)
+    let l:lower = tolower(a:path)
+    if l:lower =~ '\v\.json$'
+        setfiletype json
+    elseif l:lower =~ '\v\.(yaml|yml)$'
+        setfiletype yaml
+    elseif l:lower =~ '\v\.txt$'
+        setfiletype text
+    elseif l:lower =~ '\vmlmodel$'
+        setfiletype yaml
+    else
+        setfiletype text
+    endif
 endfunction
 
 

@@ -76,9 +76,11 @@ press `x` to open an ASCII plot of its history in the right-hand pane. All the
 details are extensively configurable, including layout and characters used in
 the display and color highlighting.
 
-Press `Ctrl-A` to toggle an artifacts section; use `x` on directories to expand
-them or on supported text artifacts (`*.txt`, `*.json`, `*.yaml`, `MLmodel`) to
-view their contents in a side buffer.
+Press `Ctrl-A` to toggle an artifacts section; use `o` or `<enter>` on directories to
+expand them or on supported text artifacts (`*.txt`, `*.json`, `*.yaml`, `MLmodel`)
+to view their contents in a side buffer.
+Press `@` to rotate the order of the parameter, metric, tag, and artifact
+sections if you want quick access to a different view.
 
 
 ## Installation
