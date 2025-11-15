@@ -1091,6 +1091,7 @@ function! s:FindScratchWindow()
         let l:buf = winbufnr(l:w)
         if l:buf <= 0
             continue
+        endif
         let l:name = bufname(l:buf)
         if empty(l:name) && getbufvar(l:buf, '&buftype') == ''
             return win_getid(l:w)
