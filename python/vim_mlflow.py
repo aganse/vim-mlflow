@@ -160,6 +160,7 @@ def getMetricsListForRun(mlflow_tracking_uri, current_runid, show=True, header_i
 
         metric_histories = {}
         output_lines = []
+        metric_offsets = []
         prefix = f"{header_icon} " if header_icon else ""
         divider = vim.eval("g:vim_mlflow_icon_vdivider") * 30
         output_lines.append(f"{prefix}Metrics in run #{current_runid[:5]}:")
@@ -178,6 +179,7 @@ def getMetricsListForRun(mlflow_tracking_uri, current_runid, show=True, header_i
                 suffix = ""
                 if len(history) > 1:
                     suffix = "  [final value; o to plot]"
+                metric_offsets.append(len(output_lines))
                 output_lines.append(f"  {k}: {v:.4g}{suffix}")
         else:
             metric_histories = {}
@@ -190,7 +192,7 @@ def getMetricsListForRun(mlflow_tracking_uri, current_runid, show=True, header_i
             "run_name": run.info.run_name or "",
             "experiment_id": run.info.experiment_id,
         }
-        return output_lines
+        return output_lines, metric_offsets
 
     except ModuleNotFoundError:
         print('Sorry, `mlflow` is not installed. See :h vim-mlflow for more details on setup.')
@@ -370,8 +372,7 @@ def download_artifact_file(tracking_uri, run_id, artifact_path, target_dir):
     mlflow.set_tracking_uri(tracking_uri)
     client = MlflowClient()
     os.makedirs(target_dir, exist_ok=True)
-    buffer = io.StringIO()
-    with contextlib.redirect_stdout(buffer):
+    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
         local_path = client.download_artifacts(run_id, artifact_path, dst_path=target_dir)
     if os.path.isdir(local_path):
         raise IsADirectoryError(f"{artifact_path} is a directory")
@@ -490,6 +491,8 @@ def getMainPageMLflow(mlflow_tracking_uri):
     out.append("")
     out.append("")
     vim.vars['vim_mlflow_artifact_lineinfo'] = {}
+    vim.vars['vim_mlflow_metric_lines'] = []
+    vim.vars['vim_mlflow_section_headers'] = []
     if verifyTrackingUrl(mlflow_tracking_uri, timeout=float(vim.eval("g:vim_mlflow_timeout"))):
         text, exptids = getMLflowExpts(mlflow_tracking_uri)
         out.extend(text)
@@ -518,13 +521,26 @@ def getMainPageMLflow(mlflow_tracking_uri):
             closed_icon = vim.eval("g:vim_mlflow_icon_markrun") or ">"
             current_run = vim.eval("s:current_runid")
             short_run = current_run[:5]
+            section_header_entries = []
+            metric_line_numbers = []
             for section in section_order:
+                if section not in ('params', 'metrics', 'tags', 'artifacts'):
+                    continue
                 show = states.get(section, False)
                 header_icon = open_icon if show else closed_icon
+                header_line = len(out) + 1
                 if section == 'params':
                     out.extend(getParamsListForRun(mlflow_tracking_uri, current_run, show=show, header_icon=header_icon))
                 elif section == 'metrics':
-                    out.extend(getMetricsListForRun(mlflow_tracking_uri, current_run, show=show, header_icon=header_icon))
+                    metrics_output, offsets = getMetricsListForRun(
+                        mlflow_tracking_uri,
+                        current_run,
+                        show=show,
+                        header_icon=header_icon,
+                    )
+                    out.extend(metrics_output)
+                    if show:
+                        metric_line_numbers.extend([header_line + offset for offset in offsets])
                 elif section == 'tags':
                     out.extend(getTagsListForRun(mlflow_tracking_uri, current_run, show=show, header_icon=header_icon))
                 elif section == 'artifacts':
@@ -544,7 +560,7 @@ def getMainPageMLflow(mlflow_tracking_uri):
                             mark_icon,
                             open_dir_icon,
                             divider_char,
-                            show_children=True,
+                            show_children=show,
                             max_depth=max_depth,
                             header_icon=header_icon,
                         )
@@ -561,13 +577,20 @@ def getMainPageMLflow(mlflow_tracking_uri):
                         vim.vars['vim_mlflow_artifact_lineinfo'] = {}
                         header = f"{header_icon} Artifacts in run #{short_run}:"
                         out.extend([header, divider_char * 30, ""])
+                section_header_entries.append({"line": header_line, "section": section})
+            vim.vars['vim_mlflow_section_headers'] = section_header_entries
+            vim.vars['vim_mlflow_metric_lines'] = metric_line_numbers
         else:
             vim.vars['vim_mlflow_artifact_lineinfo'] = {}
+            vim.vars['vim_mlflow_section_headers'] = []
+            vim.vars['vim_mlflow_metric_lines'] = []
     else:
         out.append("Could not connect to mlflow_tracking_uri")
         out.append(mlflow_tracking_uri)
         out.append(f"within the g:vim_mlflow_timeout={float(vim.eval('g:vim_mlflow_timeout')):.2f}")
         out.append("Are you sure that's the right URI?")
+        vim.vars['vim_mlflow_section_headers'] = []
+        vim.vars['vim_mlflow_metric_lines'] = []
     return out
 
 

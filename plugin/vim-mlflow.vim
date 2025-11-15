@@ -64,6 +64,10 @@ function! SetDefaults()
     let g:vim_mlflow_color_between_plotpts = get(g:, 'vim_mlflow_color_between_plotpts', 'Comment')
     let g:vim_mlflow_artifact_expanded = get(g:, 'vim_mlflow_artifact_expanded', {})
     let g:vim_mlflow_artifacts_max_depth = get(g:, 'vim_mlflow_artifacts_max_depth', 3)
+    let g:vim_mlflow_section_order = get(g:, 'vim_mlflow_section_order', ['params', 'metrics', 'tags', 'artifacts'])
+    if type(g:vim_mlflow_section_order) != type([])
+        let g:vim_mlflow_section_order = ['params', 'metrics', 'tags', 'artifacts']
+    endif
 endfunction
 
 
@@ -183,7 +187,6 @@ function! RunMLflow()
   
     " Set the defaults for all the user-specifiable options
     call SetDefaults()
-    let g:vim_mlflow_section_order = ['params', 'metrics', 'tags', 'artifacts']
   
     if bufwinnr(g:vim_mlflow_buffername) == -1
         " Open a new split on specified side
@@ -508,7 +511,7 @@ function! ScrollListBtm()
      \ s:expts_first_idx < s:num_expts-1
         let s:expts_first_idx = max([0, s:num_expts-g:vim_mlflow_expts_length])
     elseif l:curpos[1]>l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs &&
-     \     l:curpos[1]<=l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs+g:vim_mlflow_expts_length &&
+     \     l:curpos[1]<=l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs+g:vim_mlflow_runs_length &&
      \     s:runs_first_idx < s:num_runs-1
         "let s:runs_first_idx = s:num_runs-1
         let s:runs_first_idx = max([0, s:num_runs-g:vim_mlflow_runs_length])
@@ -526,7 +529,7 @@ function! ScrollListTop()
      \ s:expts_first_idx > 0
         let s:expts_first_idx = 0
     elseif l:curpos[1]>l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs &&
-     \     l:curpos[1]<=l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs+g:vim_mlflow_expts_length &&
+     \     l:curpos[1]<=l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs+g:vim_mlflow_runs_length &&
      \     s:runs_first_idx > 0
         let s:runs_first_idx = 0
     endif
@@ -579,32 +582,17 @@ endfunction
 
 
 function! ToggleMLParamsDisplay()
-    if ! s:params_are_showing
-        let s:params_are_showing = 1
-    else
-        let s:params_are_showing = 0
-    endif
-    call RefreshMLflowBuffer(1, 0)
+    call ToggleSection('params')
 endfunction
 
 
 function! ToggleMLMetricsDisplay()
-    if ! s:metrics_are_showing
-        let s:metrics_are_showing = 1
-    else
-        let s:metrics_are_showing = 0
-    endif
-    call RefreshMLflowBuffer(1, 0)
+    call ToggleSection('metrics')
 endfunction
 
 
 function! ToggleMLTagsDisplay()
-    if ! s:tags_are_showing
-        let s:tags_are_showing = 1
-    else
-        let s:tags_are_showing = 0
-    endif
-    call RefreshMLflowBuffer(1, 0)
+    call ToggleSection('tags')
 endfunction
 
 
@@ -778,7 +766,11 @@ endfunction
 " Plot metric history when cursor is on metrics line
 function! HandleMetricPlotUnderCursor()
     let l:curline = getline('.')
-    if l:curline !~# '^\s\+\S\+:'
+    let l:metric_lines = get(g:, 'vim_mlflow_metric_lines', [])
+    if index(l:metric_lines, l:line) == -1
+        return 0
+    endif
+    if l:curline !~# '^\s\{2,}\S\+:'
         return 0
     endif
     let l:match = matchlist(l:curline, '\m^\s\+\(\S\+\):')
@@ -871,6 +863,15 @@ endfunction
 function! MLflowActionUnderCursor()
     let l:line = line('.')
     let l:key = string(l:line)
+    for l:entry in get(g:, 'vim_mlflow_section_headers', [])
+        if get(l:entry, 'line', -1) == l:line
+            let l:section = get(l:entry, 'section', '')
+            if !empty(l:section)
+                call ToggleSection(l:section)
+                return 1
+            endif
+        endif
+    endfor
     let l:info = get(s:artifact_lineinfo, l:key, {})
     if !empty(l:info)
         if l:info.type ==# 'dir'
@@ -897,15 +898,7 @@ endfunction
 
 
 function! ToggleMLArtifactsDisplay()
-    if s:artifacts_are_showing
-        let s:artifacts_are_showing = 0
-    else
-        let s:artifacts_are_showing = 1
-    endif
-    let g:vim_mlflow_artifact_expanded = {}
-    let g:vim_mlflow_artifact_lineinfo = {}
-    let s:artifact_lineinfo = {}
-    call RefreshMLflowBuffer(0)
+    call ToggleSection('artifacts')
 endfunction
 
 
@@ -916,6 +909,31 @@ function! RotateMLflowSections()
     endif
     call add(l:order, remove(l:order, 0))
     let g:vim_mlflow_section_order = l:order
+    call RefreshMLflowBuffer(0)
+endfunction
+
+
+function! s:ToggleSectionInternal(section)
+    if a:section ==# 'params'
+        let s:params_are_showing = 1 - s:params_are_showing
+    elseif a:section ==# 'metrics'
+        let s:metrics_are_showing = 1 - s:metrics_are_showing
+    elseif a:section ==# 'tags'
+        let s:tags_are_showing = 1 - s:tags_are_showing
+    elseif a:section ==# 'artifacts'
+        let s:artifacts_are_showing = 1 - s:artifacts_are_showing
+        let g:vim_mlflow_artifact_expanded = {}
+        let g:vim_mlflow_artifact_lineinfo = {}
+        let s:artifact_lineinfo = {}
+    endif
+endfunction
+
+
+function! ToggleSection(section)
+    if index(['params', 'metrics', 'tags', 'artifacts'], a:section) == -1
+        return
+    endif
+    call s:ToggleSectionInternal(a:section)
     call RefreshMLflowBuffer(0)
 endfunction
 
@@ -1014,14 +1032,8 @@ function! s:ShowArtifactBuffer(path, localpath)
     if empty(l:content)
         let l:content = ['']
     endif
+    silent keepjumps %d
     call setline(1, l:content)
-    if line('$') > len(l:content)
-        if exists('*deletebufline')
-            call deletebufline('%', len(l:content)+1, '$')
-        else
-            execute (len(l:content)+1) . ',$delete _'
-        endif
-    endif
     call s:SetBufferFiletype(a:path)
     setlocal nomodifiable
     call cursor(1, 1)

@@ -72,7 +72,7 @@ listing via `?` to learn more keys to select, choose, and toggle parts of the
 display.  You can select some runs (across multiple experiments) and open them
 in an `__MLflowRuns__` pane to allow further browsing, formatting, and comparing
 of them in columns.  When hovering over a metric that was logged multiple times,
-press `x` to open an ASCII plot of its history in the right-hand pane. All the
+press `o` or `<enter>` to open an ASCII plot of its history in the right-hand pane. All the
 details are extensively configurable, including layout and characters used in
 the display and color highlighting.
 
