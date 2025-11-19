@@ -18,11 +18,8 @@ traces/etc currently).
 > * [aganse/docker_mlflow_db](https://github.com/aganse/docker_mlflow_db):
 >     ready-to-run MLflow server with PostgreSQL, AWS S3, Nginx
 >
-> * [aganse/py_torch_gpu_dock_mlflow](https://github.com/aganse/py_torch_gpu_dock_mlflow):
->     ready-to-run Python/PyTorch/MLflow setup to train models on GPU (newer)
->
 > * [aganse/py_tf2_gpu_dock_mlflow](https://github.com/aganse/py_tf2_gpu_dock_mlflow):
->     ready-to-run Python/Tensorflow2/MLflow setup to train models on GPU (a few years old)
+>     ready-to-run Python/Tensorflow2/MLflow setup to train models on GPU
 >
 > * [aganse/vim_mlflow](https://github.com/aganse/vim-mlflow):
 >     a Vim plugin to browse the MLflow parameters and metrics instead of GUI
@@ -48,40 +45,38 @@ traces/etc currently).
 
 
 ## Installation
-`vim‑mlflow` works in Vim versions compiled with *python3* support.
+`vim‑mlflow` works in Vim versions compiled with python3 support.
 
-**1. Check your Vim supports python3:**
+#### 1. Check your Vim supports python3:
 
   `vim --version | grep +python3`
+
   (If no +python3 line is found, install a Vim build that bundles Python3.)
 
-**2. Highly recommended to create/use a virtual environment:**
+#### 2. Highly recommended to create/use a virtual environment:
 
   `python3 -m venv .venv`
+
   `source .venv/bin/activate  # syntax for linux/mac`
+
   (But technically this is optional if you really insist.)
 
-**3. Install the `mlflow` Python package:**
+#### 3. Install the `mlflow` Python package:
 
   `pip install mlflow`
+
   The plugin imports and uses this mlflow package to connect to your MLflow
   tracking server.
 
-**4. Add the plugin to your plugin manager:**
+#### 4. Add the plugin to your plugin manager:
 
-  *Vundle*
-  `Plugin 'aganse/vim-mlflow'`
-  Run `:PluginInstall`.
+  *Vundle* `Plugin 'aganse/vim-mlflow'`, run `:PluginInstall`.
 
-  *Plug*
-  `Plug 'aganse/vim-mlflow'`
-  Run `:PlugInstall`.
+  *Plug* `Plug 'aganse/vim-mlflow'`, run `:PlugInstall`.
 
-  *Or path‑based*
-  `cp -r . ~/.vim/plugin/vim-mlflow`
+  *Or just path‑based* `cp -r . ~/.vim/plugin/vim-mlflow`
 
-**5. Set your MLflow tracking URI (and any other config settings you like) in
-   your ~/.vimrc:**
+#### 5. Set your MLflow tracking URI (and any other config settings you like) in your ~/.vimrc:
 
   `let g:mlflow_tracking_uri = "http://localhost:5000"`
 
@@ -128,7 +123,7 @@ let g:vim_mlflow_runs_length = 15   " runs to show at a time
 Full list of vim-mlflow config variables that may be of interest to set in .vimrc:
 |           variable               |               description               |
 | -------------------------------- | --------------------------------------- |
-| `g:mlflow_tracking_uri`          | The MLFLOW_TRACKING_URI of the MLflow tracking server to connect to (default is `"http://localhost:5000"`)|
+| `g:mlflow_tracking_uri` _(required)_ | The MLFLOW_TRACKING_URI of the MLflow tracking server to connect to (default is `"http://localhost:5000"`)|
 | `g:vim_mlflow_timeout`           | Timeout in float seconds if cannot access MLflow tracking server (default is 0.5)|
 | `g:vim_mlflow_buffername`        | Buffername of the MLflow side pane (default is `__MLflow__`)|
 | `g:vim_mlflow_runs_buffername`   | Buffername of the MLflowRuns side pane (default is `__MLflow__`)|
