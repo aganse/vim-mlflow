@@ -51,66 +51,47 @@ ML tracking servers (but not GenAI traces/etc currently).
 `vim‑mlflow` works in Vim versions compiled with *python3* support.
 
 **1. Check your Vim supports python3:**
-    ```bash
-    vim --version | grep +python3
-    ```
+
+    `vim --version | grep +python3`
     (If no +python3 line is found, install a Vim build that bundles Python3.)
 
 **2. Highly recommended to create/use a virtual environment:**
-    ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate  # syntax for linux/mac
-    ```
+
+    `python3 -m venv .venv`
+    `source .venv/bin/activate  # syntax for linux/mac`
     (But technically this is optional if you really insist.)
 
 **3. Install the `mlflow` Python package:**
-    ```bash
-    pip install mlflow
-    ```
+
+    `pip install mlflow`
     The plugin imports and uses this mlflow package to connect to your MLflow
     tracking server.
 
 **4. Add the plugin to your plugin manager:**
 
-    ##### Vundle
-    ```vim
-    Plugin 'aganse/vim-mlflow'
-    ```
+    Vundle
+    `Plugin 'aganse/vim-mlflow'`
     Run `:PluginInstall`.
 
-    ##### Plug
-    ```vim
-    Plug 'aganse/vim-mlflow'
-    ```
+    Plug
+    `Plug 'aganse/vim-mlflow'`
     Run `:PlugInstall`.
 
-    ##### Or Path‑based
-    ```text
-    cp -r . ~/.vim/plugin/vim-mlflow
-    ```
+    Or Path‑based
+    `cp -r . ~/.vim/plugin/vim-mlflow`
 
 **5. Set your MLflow tracking URI (and any other config settings you like) in
    your ~/.vimrc:**
-    ```
-    let g:mlflow_tracking_uri = "http://localhost:5000"
-    ```
+
+    `let g:mlflow_tracking_uri = "http://localhost:5000"`
 
 ---
 
 ## Usage
-Start the plugin using:
-```vim
-<leader>m
-```
-or
-```vim
-:call RunMLflow()
-```
+Start the plugin using `<leader>m` or `:call RunMLflow()`.
 You can also update that mapping in your ~/.vimrc file to set a new leader/key
-to start vim-mlflow in your Vim session, for example:
-```vim
-nnoremap <leader>m :call RunMLflow()<CR>
-```
+to start vim-mlflow in your Vim session, for example
+`nnoremap <leader>m :call RunMLflow()<CR>`.
 
 Starting the plugin opens the `__MLflow__` sidebar.  Navigate the cursor around
 with the standard vim movement keys.  A few of the more important plugin-specific
