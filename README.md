@@ -19,10 +19,10 @@ ML tracking servers (but not GenAI traces/etc currently).
 >     ready-to-run MLflow server with PostgreSQL, AWS S3, Nginx
 >
 > * [aganse/py_torch_gpu_dock_mlflow](https://github.com/aganse/py_torch_gpu_dock_mlflow):
->     ready-to-run Python/PyTorch/MLflow setup to train models on GPU (newer, still in progress, basically a torch-based version of the below)
+>     ready-to-run Python/PyTorch/MLflow setup to train models on GPU (newer)
 >
 > * [aganse/py_tf2_gpu_dock_mlflow](https://github.com/aganse/py_tf2_gpu_dock_mlflow):
->     ready-to-run Python/Tensorflow2/MLflow setup to train models on GPU (a few years old but still useful)
+>     ready-to-run Python/Tensorflow2/MLflow setup to train models on GPU (a few years old)
 >
 > * [aganse/vim_mlflow](https://github.com/aganse/vim-mlflow):
 >     a Vim plugin to browse the MLflow parameters and metrics instead of GUI
@@ -50,47 +50,47 @@ ML tracking servers (but not GenAI traces/etc currently).
 ## Installation
 `vim‑mlflow` works in Vim versions compiled with *python3* support.
 
-1. Check your Vim supports python3:
+**1. Check your Vim supports python3:**
     ```bash
     vim --version | grep +python3
     ```
     (If no +python3 line is found, install a Vim build that bundles Python3.)
 
-2. Highly recommended to create/use a virtual environment:
+**2. Highly recommended to create/use a virtual environment:**
     ```bash
     python3 -m venv .venv
     source .venv/bin/activate  # syntax for linux/mac
     ```
     (But technically this is optional if you really insist.)
 
-3. Install the `mlflow` Python package:
+**3. Install the `mlflow` Python package:**
     ```bash
     pip install mlflow
     ```
     The plugin imports and uses this mlflow package to connect to your MLflow
     tracking server.
 
-4. Add the plugin to your plugin manager:
+**4. Add the plugin to your plugin manager:**
 
-    #### Vundle
+    ##### Vundle
     ```vim
     Plugin 'aganse/vim-mlflow'
     ```
     Run `:PluginInstall`.
 
-    #### Plug
+    ##### Plug
     ```vim
     Plug 'aganse/vim-mlflow'
     ```
     Run `:PlugInstall`.
 
-    #### Or Path‑based
+    ##### Or Path‑based
     ```text
     cp -r . ~/.vim/plugin/vim-mlflow
     ```
 
-5. Set your MLflow tracking URI (and any other config settings you like) in
-   your ~/.vimrc:
+**5. Set your MLflow tracking URI (and any other config settings you like) in
+   your ~/.vimrc:**
     ```
     let g:mlflow_tracking_uri = "http://localhost:5000"
     ```
