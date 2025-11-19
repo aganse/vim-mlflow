@@ -4,12 +4,12 @@
 
 `vim‑mlflow` is a lightweight Vim plugin that lets you browse and interact with
 MLflow experiments, runs, metrics, parameters, tags, and artifacts directly
-in your Vim editor.  It opens a dedicated sidebar (`__MLflow__`) and a
-detail pane (`__MLflowRuns__`) so you can explore data without leaving the
-terminal, even allowing you to plot metric histories and browse non-graphical
-artifacts.  The plugin is written in Vimscript with embedded Python and talks
-to MLflow through its Python API.  It works with both MLflow3.x and MLflow2.x
-ML tracking servers (but not GenAI traces/etc currently).
+in your Vim editor.  It opens a dedicated sidebar and a detail pane so you can
+explore data without leaving the terminal, even allowing you to plot metric
+histories and browse non-graphical artifacts.  The plugin is written in
+Vimscript with embedded Python and talks to MLflow through its Python API.
+It works with both MLflow3.x and MLflow2.x ML tracking servers (but not GenAI
+traces/etc currently).
 
 > <SUP>
 > :bulb: Note this repo is part of a group that you might find useful together
@@ -45,47 +45,47 @@ ML tracking servers (but not GenAI traces/etc currently).
 > `vim‑mlflow` requires a Python3‑enabled Vim and the `mlflow` Python package
 > installed in the same environment that Vim is launched from.
 
----
+
 
 ## Installation
 `vim‑mlflow` works in Vim versions compiled with *python3* support.
 
 **1. Check your Vim supports python3:**
 
-    `vim --version | grep +python3`
-    (If no +python3 line is found, install a Vim build that bundles Python3.)
+  `vim --version | grep +python3`
+  (If no +python3 line is found, install a Vim build that bundles Python3.)
 
 **2. Highly recommended to create/use a virtual environment:**
 
-    `python3 -m venv .venv`
-    `source .venv/bin/activate  # syntax for linux/mac`
-    (But technically this is optional if you really insist.)
+  `python3 -m venv .venv`
+  `source .venv/bin/activate  # syntax for linux/mac`
+  (But technically this is optional if you really insist.)
 
 **3. Install the `mlflow` Python package:**
 
-    `pip install mlflow`
-    The plugin imports and uses this mlflow package to connect to your MLflow
-    tracking server.
+  `pip install mlflow`
+  The plugin imports and uses this mlflow package to connect to your MLflow
+  tracking server.
 
 **4. Add the plugin to your plugin manager:**
 
-    Vundle
-    `Plugin 'aganse/vim-mlflow'`
-    Run `:PluginInstall`.
+  *Vundle*
+  `Plugin 'aganse/vim-mlflow'`
+  Run `:PluginInstall`.
 
-    Plug
-    `Plug 'aganse/vim-mlflow'`
-    Run `:PlugInstall`.
+  *Plug*
+  `Plug 'aganse/vim-mlflow'`
+  Run `:PlugInstall`.
 
-    Or Path‑based
-    `cp -r . ~/.vim/plugin/vim-mlflow`
+  *Or path‑based*
+  `cp -r . ~/.vim/plugin/vim-mlflow`
 
 **5. Set your MLflow tracking URI (and any other config settings you like) in
    your ~/.vimrc:**
 
-    `let g:mlflow_tracking_uri = "http://localhost:5000"`
+  `let g:mlflow_tracking_uri = "http://localhost:5000"`
 
----
+
 
 ## Usage
 Start the plugin using `<leader>m` or `:call RunMLflow()`.
@@ -102,7 +102,7 @@ key bindings inside the sidebar are:
 | `o`, `<enter>` | Open experiment/run/plot/artifact/section under cursor |
 | `r` | Requery the MLflow display |
 | `<space>` | Mark runs in the runs list |
-| `R` | Open the Runs window to show and compare more details for the marked runs |
+| `R` | Open the `__MLflowRuns__` window to show and compare more details for the marked runs |
 
 Pressing `o` or `<enter>` while your cursor is on an experiment will open that
 experiment, updating the Runs list.  Pressing it on a run will open that run and
@@ -110,7 +110,7 @@ update the Metrics, Parameters, Tags, and Artifacts shown from the run.  Pressin
 it on a metric with a history will open an ASCII plot of that metric's time
 series.  Press `?` in the sidebar for a full help listing of the keys map.
 
----
+
 
 ## Configuration
 
@@ -168,6 +168,7 @@ Full list of vim-mlflow config variables that may be of interest to set in .vimr
 | `g:vim_mlflow_artifacts_max_depth` | Maximum artifact directory depth shown when expanding folders (default `3`)|
 
 
+
 ## Troubleshooting
 
 - If the plugin fails to load, double-check that `mlflow` is importable from
@@ -189,6 +190,7 @@ Full list of vim-mlflow config variables that may be of interest to set in .vimr
   shown but cannot be opened in terminal.
 
 
+
 ## Legacy/older versions
 
    Legacy/older versions of this plugin can be accessed by git checking out an
@@ -202,6 +204,7 @@ Full list of vim-mlflow config variables that may be of interest to set in .vimr
    | v1.0.0               |  2.12.0, 2.19.0, 3.6.0     |
 
 
+
 ## Making the animated screen-shot gif
 
 * pip install [asciinema](https://github.com/asciinema/asciinema)
@@ -210,6 +213,7 @@ Full list of vim-mlflow config variables that may be of interest to set in .vimr
 * install [agg](https://github.com/asciinema/agg) from e.g.
   [premade binary for mac](https://github.com/asciinema/agg/releases/download/v1.3.0/agg-aarch64-apple-darwin)
 * agg --speed 2 demo.cast demo.gif  # convert the asciinema cast to animated gif
+
 
 
 ## Acknowledgements
