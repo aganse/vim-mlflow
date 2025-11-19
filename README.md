@@ -39,7 +39,7 @@ ML tracking servers (but not GenAI traces/etc currently).
 * Open a run comparison pane (`__MLflowRuns__`) to compare metrics
   across multiple selected runs.
 * View ASCII plots of metric histories, and text artifacts inline.
-* Completely configurable via Vim variables.
+* Completely configurable via Vim variables (e.g. in your ~/.vimrc file).
 
 > [!NOTE]
 > `vim‑mlflow` requires a Python3‑enabled Vim and the `mlflow` Python package
@@ -48,47 +48,52 @@ ML tracking servers (but not GenAI traces/etc currently).
 ---
 
 ## Installation
-`vim‑mlflow` works with Vim compiled with *python3* support.
+`vim‑mlflow` works in Vim versions compiled with *python3* support.
 
-1. Vim with Python3
-Check your Vim supports python3:
-```bash
-vim --version | grep +python3
-```
-(If no +python3 line is found, install a Vim build that bundles Python3.)
+1. Check your Vim supports python3:
+    ```bash
+    vim --version | grep +python3
+    ```
+    (If no +python3 line is found, install a Vim build that bundles Python3.)
 
-2. Highly recommended to create/use a virtual environment
-```bash
-python3 -m venv .venv
-source .venv/bin/activate  # syntax for linux/mac
-```
-But technically this is optional if you really insist.
+2. Highly recommended to create/use a virtual environment:
+    ```bash
+    python3 -m venv .venv
+    source .venv/bin/activate  # syntax for linux/mac
+    ```
+    (But technically this is optional if you really insist.)
 
-3. Install the `mlflow` Python package
-```bash
-pip install mlflow
-```
-The plugin imports this package.
+3. Install the `mlflow` Python package:
+    ```bash
+    pip install mlflow
+    ```
+    The plugin imports and uses this mlflow package to connect to your MLflow
+    tracking server.
 
-4. Add the plugin to your plugin manager
+4. Add the plugin to your plugin manager:
 
-#### Vundle
-```vim
-Plugin 'aganse/vim-mlflow'
-```
-Run `:PluginInstall`.
+    #### Vundle
+    ```vim
+    Plugin 'aganse/vim-mlflow'
+    ```
+    Run `:PluginInstall`.
 
-#### Plug
-```vim
-Plug 'aganse/vim-mlflow'
-```
-Run `:PlugInstall`.
+    #### Plug
+    ```vim
+    Plug 'aganse/vim-mlflow'
+    ```
+    Run `:PlugInstall`.
 
-#### Or Path‑based
-```text
-~/.vim/plugin/vim-mlflow
-```
-Copy (`cp -r`) this `vim-mlflow` directory from this repo into that location.
+    #### Or Path‑based
+    ```text
+    cp -r . ~/.vim/plugin/vim-mlflow
+    ```
+
+5. Set your MLflow tracking URI (and any other config settings you like) in
+   your ~/.vimrc:
+    ```
+    let g:mlflow_tracking_uri = "http://localhost:5000"
+    ```
 
 ---
 
@@ -101,7 +106,7 @@ or
 ```vim
 :call RunMLflow()
 ```
-You can also put a mapping into your ~/.vimrc file to set a new leader/key
+You can also update that mapping in your ~/.vimrc file to set a new leader/key
 to start vim-mlflow in your Vim session, for example:
 ```vim
 nnoremap <leader>m :call RunMLflow()<CR>
@@ -113,15 +118,16 @@ key bindings inside the sidebar are:
 
 | Key | Action |
 |-----|--------|
-| `o`, `Enter` | Open experiment/run/plot/artifact/section under cursor |
+| `o`, `<enter>` | Open experiment/run/plot/artifact/section under cursor |
 | `r` | Requery the MLflow display |
 | `<space>` | Mark runs in the runs list |
 | `R` | Open the Runs window to show and compare more details for the marked runs |
 
-Press `?` in the sidebar for a full help listing of the keys map.
-Running `:RunMLflow` while your cursor is on a metric will open an ASCII plot
-of that metric's time series, similarly on an artifact will open the artifact
-(for text file artifacts).
+Pressing `o` or `<enter>` while your cursor is on an experiment will open that
+experiment, updating the Runs list.  Pressing it on a run will open that run and
+update the Metrics, Parameters, Tags, and Artifacts shown from the run.  Pressing
+it on a metric with a history will open an ASCII plot of that metric's time
+series.  Press `?` in the sidebar for a full help listing of the keys map.
 
 ---
 
@@ -185,13 +191,15 @@ Full list of vim-mlflow config variables that may be of interest to set in .vimr
 
 - If the plugin fails to load, double-check that `mlflow` is importable from
   the Python environment embedded in Vim (`:py3 import mlflow` should succeed).
-- The sidebar can be slow on high-latency connections to MLflow, because each
-  refresh spins up a short-lived Python process and re-queries MLflow anew.
-  Running Vim close to the tracking server (eg same machine, even if the database
-  MLflow is using is not on same machine) or increasing `g:vim_mlflow_timeout`
-  can help.  A future plugin version may keep a persistent python process that
-  keeps state in memory and requeries the database much less often, if enough
-  need is found.  Stay tuned.
+- The sidebar can be slow on high-latency connections to MLflow, because as
+  currently implemented, each refresh spins up a short-lived Python process and
+  re-queries MLflow anew.  Running Vim close to the tracking server seems to
+  work fine (e.g. on same machine, and fine even if the database MLflow is
+  using is in AWS RDS while MLflow is in a tiny EC2 instance).  For slower
+  connections, increasing `g:vim_mlflow_timeout` might help avoid access
+  timeouts.  If there's demand, a future plugin version could keep a persistent
+  python process that keeps state in memory and requeries the database much
+  less often, but this hasn't seemed to be of much concern so far.
 - Unicode icons require a font that includes box-drawing characters.  Set
   `g:vim_mlflow_icon_useunicode = 0` if glyphs look broken as the simple quick
   fix, and also note there are config vars to change individual icon characters.
@@ -202,16 +210,15 @@ Full list of vim-mlflow config variables that may be of interest to set in .vimr
 
 ## Legacy/older versions
 
-   If you git checkout an earlier version of vim-mlflow locally, you can
-   reference it in your .vimrc like (e.g. for Vundle):
-   `Plugin 'file:///my/path/to/python/vim-mlflow'`.
+   Legacy/older versions of this plugin can be accessed by git checking out an
+   earlier version locally, and then referencing it in your .vimrc like
+   (e.g. for Vundle) `Plugin 'file:///my/path/to/python/vim-mlflow'`.
 
-   |  vim-mlflow git tag  | worked with mlflow version |
+   |  vim-mlflow git tag  | tested with mlflow version |
    | ---------------------| -------------------------- |
    | v0.8                 |  1.26.1                    |
-   | v0.9 and since       |  1.30.0, 2.7.1             |
-   | (just before v1.0.0) |  2.1.1                     |
-   | v1.0.0               |  2.1.1+ up to 3.6.0        |
+   | v0.9                 |  1.30.0, 2.7.1             |
+   | v1.0.0               |  2.12.0, 2.19.0, 3.6.0     |
 
 
 ## Making the animated screen-shot gif
