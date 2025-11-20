@@ -19,7 +19,7 @@ traces/etc currently).
 >     ready-to-run MLflow server with PostgreSQL, AWS S3, Nginx
 >
 > * [aganse/py_tf2_gpu_dock_mlflow](https://github.com/aganse/py_tf2_gpu_dock_mlflow):
->     ready-to-run Python/Tensorflow2/MLflow setup to train models on GPU
+>     ready-to-run Python/Tensorflow2/MLflow-Projects setup to train models on GPU
 >
 > * [aganse/vim_mlflow](https://github.com/aganse/vim-mlflow):
 >     a Vim plugin to browse the MLflow parameters and metrics instead of GUI
@@ -47,43 +47,35 @@ traces/etc currently).
 ## Installation
 `vim‑mlflow` works in Vim versions compiled with python3 support.
 
-#### 1. Check your Vim supports python3:
-
-  `vim --version | grep +python3`
-
-  (If no +python3 line is found, install a Vim build that bundles Python3.)
+#### 1. Check that your Vim supports python3:
+- `vim --version | grep +python3`
+- (If no +python3 line is found, install a Vim build that was compiled with Python3.)
 
 #### 2. Highly recommended to create/use a virtual environment:
-
-  `python3 -m venv .venv`
-
-  `source .venv/bin/activate  # syntax for linux/mac`
-
-  (But technically this is optional if you really insist.)
+- `python3 -m venv .venv`
+- `source .venv/bin/activate  # syntax for linux/mac`
+- (Technically this step is optional if you really insist, but it's recommended.)
 
 #### 3. Install the `mlflow` Python package:
-
-  `pip install mlflow`
-
-  The plugin imports and uses this mlflow package to connect to your MLflow
+- `pip install mlflow`
+- The plugin imports and uses this mlflow package to connect to your MLflow
+  tracking server.  For the relatively basic functions in this plugin, the
+  version of the MLflow package doesn't need to exactly match that of your
   tracking server.
 
 #### 4. Add the plugin to your plugin manager:
-
-  *Vundle* `Plugin 'aganse/vim-mlflow'`, run `:PluginInstall`.
-
-  *Plug* `Plug 'aganse/vim-mlflow'`, run `:PlugInstall`.
-
-  *Or just path‑based* `cp -r . ~/.vim/plugin/vim-mlflow`
+- *Vundle* add `Plugin 'aganse/vim-mlflow'` to .vimrc, run `:PluginInstall`.
+- *Plug* add `Plug 'aganse/vim-mlflow'` to .vimrc, run `:PlugInstall`.
+- *Or just path‑based* `cp -r . ~/.vim/plugin/vim-mlflow`
 
 #### 5. Set your MLflow tracking URI (and any other config settings you like) in your ~/.vimrc:
-
-  `let g:mlflow_tracking_uri = "http://localhost:5000"`
+- `let g:mlflow_tracking_uri = "http://localhost:5000"`
 
 
 
 ## Usage
-Start the plugin using `<leader>m` or `:call RunMLflow()`.
+Ensure you're in your python environment with MLflow before starting Vim.
+Then start the plugin using `<leader>m` or `:call RunMLflow()`.
 You can also update that mapping in your ~/.vimrc file to set a new leader/key
 to start vim-mlflow in your Vim session, for example
 `nnoremap <leader>m :call RunMLflow()<CR>`.
@@ -196,18 +188,18 @@ Full list of vim-mlflow config variables that may be of interest to set in .vimr
    | ---------------------| -------------------------- |
    | v0.8                 |  1.26.1                    |
    | v0.9                 |  1.30.0, 2.7.1             |
-   | v1.0.0               |  2.12.0, 2.19.0, 3.6.0     |
+   | v1.0.0 (this version)|  2.12.0, 2.19.0, 3.6.0     |
 
 
 
 ## Making the animated screen-shot gif
 
-* pip install [asciinema](https://github.com/asciinema/asciinema)
-* asciinema rec demo.cast  # start recording terminal screen to file
+* `pip install [asciinema](https://github.com/asciinema/asciinema)`
+* `asciinema rec demo.cast  # start recording terminal screen to file`
 * [manually conduct the usage example sequence, which gets saved to file]
 * install [agg](https://github.com/asciinema/agg) from e.g.
   [premade binary for mac](https://github.com/asciinema/agg/releases/download/v1.3.0/agg-aarch64-apple-darwin)
-* agg --speed 2 demo.cast demo.gif  # convert the asciinema cast to animated gif
+* `agg --speed 2 demo.cast demo.gif`  # convert the asciinema cast to animated gif
 
 
 
