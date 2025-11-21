@@ -717,26 +717,54 @@ endfunction
 
 function! MainPageMLflow()
 python3 << EOF
-import os, sys
+import os, sys, site
 from os.path import normpath, join
 import vim
-if 'VIRTUAL_ENV' in os.environ:
-    project_base_dir = os.environ['VIRTUAL_ENV']
-    # Add the site-packages of the current virtual environment to sys.path
-    py_version_dir = 'python{}.{}'.format(sys.version_info.major, sys.version_info.minor)
-    sys.path.insert(0, join(project_base_dir, 'lib', py_version_dir, 'site-packages'))
+
+def _augment_sys_path():
+    def _add_site_dir(path):
+        if not os.path.isdir(path):
+            return
+        before = list(sys.path)
+        site.addsitedir(path)
+        new_entries = [p for p in sys.path if p not in before]
+        for entry in reversed(new_entries):
+            idx = sys.path.index(entry)
+            sys.path.insert(0, sys.path.pop(idx))
+
+    env_roots = []
+    for key in ('VIRTUAL_ENV', 'CONDA_PREFIX', 'PYENV_VIRTUAL_ENV'):
+        value = os.environ.get(key)
+        if value and value not in env_roots:
+            env_roots.append(value)
+    for root in env_roots:
+        for lib_name in ('lib', 'Lib', 'lib64'):
+            lib_dir = os.path.join(root, lib_name)
+            if not os.path.isdir(lib_dir):
+                continue
+            py_version_dir = 'python{}.{}'.format(sys.version_info.major, sys.version_info.minor)
+            candidate_dirs = [os.path.join(lib_dir, py_version_dir, 'site-packages')]
+            for entry in os.listdir(lib_dir):
+                if entry.startswith('python') and entry != py_version_dir:
+                    candidate_dirs.append(os.path.join(lib_dir, entry, 'site-packages'))
+            for path in candidate_dirs:
+                _add_site_dir(path)
+
+_augment_sys_path()
 
 plugin_root_dir = vim.eval('s:plugin_root_dir')
 python_root_dir = normpath(join(plugin_root_dir, '..', 'python'))
-sys.path.insert(0, python_root_dir)
+if python_root_dir not in sys.path:
+    sys.path.insert(0, python_root_dir)
 
 try:
     import vim_mlflow  # this import must be after entering python env above
-except:
+except ModuleNotFoundError as exc:
     print("Error: Vim-mlflow requires the mlflow python package to be installed in the environment in which it runs.")
     print("Perhaps you are not in the python environment you think you are, or something was wrong with that install.")
     print("Please see vim-mlflow's readme file for more details.")
-    exit
+    print("Underlying import error:", exc)
+    raise
 mlflowmain = vim_mlflow.getMainPageMLflow(vim.eval('g:mlflow_tracking_uri'))
 EOF
 
@@ -748,18 +776,45 @@ endfunction
 
 function! RunsPageMLflow()
 python3 << EOF
-import os, sys
+import os, sys, site
 from os.path import normpath, join
 import vim
-if 'VIRTUAL_ENV' in os.environ:
-    project_base_dir = os.environ['VIRTUAL_ENV']
-    # Add the site-packages of the current virtual environment to sys.path
-    py_version_dir = 'python{}.{}'.format(sys.version_info.major, sys.version_info.minor)
-    sys.path.insert(0, join(project_base_dir, 'lib', py_version_dir, 'site-packages'))
+
+def _augment_sys_path():
+    def _add_site_dir(path):
+        if not os.path.isdir(path):
+            return
+        before = list(sys.path)
+        site.addsitedir(path)
+        new_entries = [p for p in sys.path if p not in before]
+        for entry in reversed(new_entries):
+            idx = sys.path.index(entry)
+            sys.path.insert(0, sys.path.pop(idx))
+
+    env_roots = []
+    for key in ('VIRTUAL_ENV', 'CONDA_PREFIX', 'PYENV_VIRTUAL_ENV'):
+        value = os.environ.get(key)
+        if value and value not in env_roots:
+            env_roots.append(value)
+    for root in env_roots:
+        for lib_name in ('lib', 'Lib', 'lib64'):
+            lib_dir = os.path.join(root, lib_name)
+            if not os.path.isdir(lib_dir):
+                continue
+            py_version_dir = 'python{}.{}'.format(sys.version_info.major, sys.version_info.minor)
+            candidate_dirs = [os.path.join(lib_dir, py_version_dir, 'site-packages')]
+            for entry in os.listdir(lib_dir):
+                if entry.startswith('python') and entry != py_version_dir:
+                    candidate_dirs.append(os.path.join(lib_dir, entry, 'site-packages'))
+            for path in candidate_dirs:
+                _add_site_dir(path)
+
+_augment_sys_path()
 
 plugin_root_dir = vim.eval('s:plugin_root_dir')
 python_root_dir = normpath(join(plugin_root_dir, '..', 'python'))
-sys.path.insert(0, python_root_dir)
+if python_root_dir not in sys.path:
+    sys.path.insert(0, python_root_dir)
 
 import vim_mlflow_runs  # this import must be after entering python env above
 mlflowruns = vim_mlflow_runs.getRunsPageMLflow(vim.eval('g:mlflow_tracking_uri'))
@@ -825,17 +880,45 @@ function! HandleMetricPlotUnderCursor()
 
     " Render the plot via python helper
 python3 << EOF
-import os, sys, json
+import os, sys, json, site
 from os.path import normpath, join
 import vim
-if 'VIRTUAL_ENV' in os.environ:
-    project_base_dir = os.environ['VIRTUAL_ENV']
-    py_version_dir = 'python{}.{}'.format(sys.version_info.major, sys.version_info.minor)
-    sys.path.insert(0, join(project_base_dir, 'lib', py_version_dir, 'site-packages'))
+
+def _augment_sys_path():
+    def _add_site_dir(path):
+        if not os.path.isdir(path):
+            return
+        before = list(sys.path)
+        site.addsitedir(path)
+        new_entries = [p for p in sys.path if p not in before]
+        for entry in reversed(new_entries):
+            idx = sys.path.index(entry)
+            sys.path.insert(0, sys.path.pop(idx))
+
+    env_roots = []
+    for key in ('VIRTUAL_ENV', 'CONDA_PREFIX', 'PYENV_VIRTUAL_ENV'):
+        value = os.environ.get(key)
+        if value and value not in env_roots:
+            env_roots.append(value)
+    for root in env_roots:
+        for lib_name in ('lib', 'Lib', 'lib64'):
+            lib_dir = os.path.join(root, lib_name)
+            if not os.path.isdir(lib_dir):
+                continue
+            py_version_dir = 'python{}.{}'.format(sys.version_info.major, sys.version_info.minor)
+            candidate_dirs = [os.path.join(lib_dir, py_version_dir, 'site-packages')]
+            for entry in os.listdir(lib_dir):
+                if entry.startswith('python') and entry != py_version_dir:
+                    candidate_dirs.append(os.path.join(lib_dir, entry, 'site-packages'))
+            for path in candidate_dirs:
+                _add_site_dir(path)
+
+_augment_sys_path()
 
 plugin_root_dir = vim.eval('s:plugin_root_dir')
 python_root_dir = normpath(join(plugin_root_dir, '..', 'python'))
-sys.path.insert(0, python_root_dir)
+if python_root_dir not in sys.path:
+    sys.path.insert(0, python_root_dir)
 
 import vim_mlflow
 
@@ -981,17 +1064,45 @@ function! OpenArtifactFile(path)
         return
     endif
 python3 << EOF
-import os, sys, json, tempfile
+import os, sys, json, tempfile, site
 from os.path import normpath, join
 import vim
-if 'VIRTUAL_ENV' in os.environ:
-    project_base_dir = os.environ['VIRTUAL_ENV']
-    py_version_dir = 'python{}.{}'.format(sys.version_info.major, sys.version_info.minor)
-    sys.path.insert(0, join(project_base_dir, 'lib', py_version_dir, 'site-packages'))
+
+def _augment_sys_path():
+    def _add_site_dir(path):
+        if not os.path.isdir(path):
+            return
+        before = list(sys.path)
+        site.addsitedir(path)
+        new_entries = [p for p in sys.path if p not in before]
+        for entry in reversed(new_entries):
+            idx = sys.path.index(entry)
+            sys.path.insert(0, sys.path.pop(idx))
+
+    env_roots = []
+    for key in ('VIRTUAL_ENV', 'CONDA_PREFIX', 'PYENV_VIRTUAL_ENV'):
+        value = os.environ.get(key)
+        if value and value not in env_roots:
+            env_roots.append(value)
+    for root in env_roots:
+        for lib_name in ('lib', 'Lib', 'lib64'):
+            lib_dir = os.path.join(root, lib_name)
+            if not os.path.isdir(lib_dir):
+                continue
+            py_version_dir = 'python{}.{}'.format(sys.version_info.major, sys.version_info.minor)
+            candidate_dirs = [os.path.join(lib_dir, py_version_dir, 'site-packages')]
+            for entry in os.listdir(lib_dir):
+                if entry.startswith('python') and entry != py_version_dir:
+                    candidate_dirs.append(os.path.join(lib_dir, entry, 'site-packages'))
+            for path in candidate_dirs:
+                _add_site_dir(path)
+
+_augment_sys_path()
 
 plugin_root_dir = vim.eval('s:plugin_root_dir')
 python_root_dir = normpath(join(plugin_root_dir, '..', 'python'))
-sys.path.insert(0, python_root_dir)
+if python_root_dir not in sys.path:
+    sys.path.insert(0, python_root_dir)
 
 import vim_mlflow
 

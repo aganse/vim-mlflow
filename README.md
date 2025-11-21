@@ -75,7 +75,8 @@ traces/etc currently).
 
 ## Usage
 Ensure you're in your python environment with MLflow before starting Vim.
-Then start the plugin using `<leader>m` or `:call RunMLflow()`.
+Then start the plugin using `<leader>m` or `:call RunMLflow()` (e.g. on my
+system the `<leader>` key is `\` so I do `\m`).
 You can also update that mapping in your ~/.vimrc file to set a new leader/key
 to start vim-mlflow in your Vim session, for example
 `nnoremap <leader>m :call RunMLflow()<CR>`.
