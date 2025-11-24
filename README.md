@@ -38,9 +38,13 @@ traces/etc currently).
 * View ASCII plots of metric histories, and text artifacts inline.
 * Completely configurable via Vim variables (e.g. in your ~/.vimrc file).
 
-> [!NOTE]
+> [!IMPORTANT]
 > `vim‑mlflow` requires a Python3‑enabled Vim and the `mlflow` Python package
-> installed in the same environment that Vim is launched from.
+> installed in the same environment that Vim is launched from.  You'll also want
+> to make sure that the version of Python3 with which you created your Python
+> environment matches the version of Python3 in your vim installation (e.g. you
+> can check this in vim with `:py3 import sys; print(sys.version)`).  If you
+> just use the latest version of everything you probably won't have any issue.
 
 
 
