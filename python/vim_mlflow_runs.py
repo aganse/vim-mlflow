@@ -11,6 +11,7 @@ import warnings
 
 #warnings.simplefilter(action='ignore', category=FutureWarning)
 
+from vim_mlflow_utils import format_run_duration
 
 VIEWTYPE_MAP = {
     1: ViewType.ACTIVE_ONLY,
@@ -117,21 +118,9 @@ def getRunsPageMLflow(mlflow_tracking_uri):
             insert_idx = runsdf.columns.get_loc("user")
         if "start_time" in runsdf.columns and "end_time" in runsdf.columns:
             timedeltas = runsdf["end_time"] - runsdf["start_time"]
-
-            def format_duration(tdelta):
-                if pd.isna(tdelta):
-                    return "-"
-                total_seconds = tdelta.total_seconds()
-                if total_seconds < 0:
-                    return "-"
-                if total_seconds < 300:
-                    return f"{int(total_seconds)}s"
-                if total_seconds < 7200:
-                    return f"{int(total_seconds // 60)}m"
-                hours = total_seconds / 3600.0
-                return f"{hours:.1f}h"
-
-            duration_col = timedeltas.apply(format_duration)
+            duration_col = timedeltas.apply(
+                lambda td: format_run_duration(td.total_seconds() if not pd.isna(td) else None)
+            )
         else:
             duration_col = pd.Series("-", index=runsdf.index)
         runsdf.insert(insert_idx, "duration", duration_col)

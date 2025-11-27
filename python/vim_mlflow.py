@@ -1,5 +1,4 @@
 from datetime import datetime
-from urllib.request import urlopen, Request
 import math
 import os
 import json
@@ -16,6 +15,7 @@ import warnings
 
 #warnings.simplefilter(action='ignore', category=FutureWarning)
 
+from vim_mlflow_utils import format_run_duration
 
 VIEWTYPE_MAP = {
     1: ViewType.ACTIVE_ONLY,
@@ -113,6 +113,10 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
             stage_letter = ""
             if view_type == ViewType.ALL:
                 stage_letter = lifecycles.get(run.info.lifecycle_stage, run.info.lifecycle_stage[:1].upper())
+            if run.info.start_time and run.info.end_time:
+                duration_seconds = (run.info.end_time - run.info.start_time) / 1e3
+            else:
+                duration_seconds = None
             visible_rows.append(
                 {
                     "mark": mark,
@@ -120,6 +124,7 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
                     "stage": stage_letter,
                     "start": st,
                     "status": status,
+                    "duration": format_run_duration(duration_seconds),
                     "user": user,
                     "name": runname,
                 }
@@ -127,16 +132,18 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
 
         if visible_rows:
             status_width = max(len(row["status"]) for row in visible_rows)
+            duration_width = max(len(row["duration"]) for row in visible_rows)
             user_width = max(len(row["user"]) for row in visible_rows)
         else:
-            status_width = user_width = 1
+            status_width = duration_width = user_width = 1
 
         for row in visible_rows:
             stage_prefix = f"{row['stage']} " if row["stage"] else ""
             status_col = row["status"].ljust(status_width)
+            duration_col = row["duration"].rjust(duration_width)
             user_col = row["user"].ljust(user_width)
             output_lines.append(
-                f"{row['mark']}#{row['run_id']}: {stage_prefix}{row['start']}  {status_col}  {user_col}  {row['name']}"
+                f"{row['mark']}#{row['run_id']}: {stage_prefix}{row['start']}  {status_col}  {duration_col}  {user_col}  {row['name']}"
             )
         if vim.eval("g:vim_mlflow_show_scrollicons"):
             if int(vim.eval("s:runs_first_idx")) == \
