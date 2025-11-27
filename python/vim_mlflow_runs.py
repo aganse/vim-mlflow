@@ -105,11 +105,36 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         runsdf["expt_id"] = runsdf["expt_id"].apply(lambda x: "#"+x)
         runsdf["run_id"] = runsdf["run_id"].apply(lambda x: "#"+x)
         if "start_time" in runsdf.columns:
-            runsdf["start_time"] = (runsdf["start_time"] / 1.0e9).round()
-            runsdf["start_time"] = pd.to_datetime(runsdf["start_time"], unit="s", errors="coerce")
+            runsdf["start_time"] = pd.to_numeric(runsdf["start_time"], errors="coerce")
+            runsdf["start_time"] = pd.to_datetime(runsdf["start_time"], unit="ms", errors="coerce")
         if "end_time" in runsdf.columns:
-            runsdf["end_time"] = (runsdf["end_time"] / 1.0e9).round()
-            runsdf["end_time"] = pd.to_datetime(runsdf["end_time"], unit="s", errors="coerce")
+            runsdf["end_time"] = pd.to_numeric(runsdf["end_time"], errors="coerce")
+            runsdf["end_time"] = pd.to_datetime(runsdf["end_time"], unit="ms", errors="coerce")
+        insert_idx = len(runsdf.columns)
+        if "status" in runsdf.columns:
+            insert_idx = runsdf.columns.get_loc("status") + 1
+        elif "user" in runsdf.columns:
+            insert_idx = runsdf.columns.get_loc("user")
+        if "start_time" in runsdf.columns and "end_time" in runsdf.columns:
+            timedeltas = runsdf["end_time"] - runsdf["start_time"]
+
+            def format_duration(tdelta):
+                if pd.isna(tdelta):
+                    return "-"
+                total_seconds = tdelta.total_seconds()
+                if total_seconds < 0:
+                    return "-"
+                if total_seconds < 300:
+                    return f"{int(total_seconds)}s"
+                if total_seconds < 7200:
+                    return f"{int(total_seconds // 60)}m"
+                hours = total_seconds / 3600.0
+                return f"{hours:.1f}h"
+
+            duration_col = timedeltas.apply(format_duration)
+        else:
+            duration_col = pd.Series("-", index=runsdf.index)
+        runsdf.insert(insert_idx, "duration", duration_col)
         runsdf = runsdf.sort_values(["expt_id", "start_time"], ascending=False)
 
         # Collapse specified columns
