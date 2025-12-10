@@ -511,15 +511,17 @@ function! ScrollListBtm()
     let l:top_to_expts = 6
     let l:expts_to_runs = 4
     let l:curpos = getpos('.')
+    let s:actual_expts_length = min([g:vim_mlflow_expts_length, s:num_expts])
+    let s:actual_runs_length = min([g:vim_mlflow_runs_length, s:num_runs])
     if l:curpos[1]>l:top_to_expts &&
-     \ l:curpos[1]<=l:top_to_expts+g:vim_mlflow_expts_length &&
+     \ l:curpos[1]<=l:top_to_expts+s:actual_expts_length &&
      \ s:expts_first_idx < s:num_expts-1
-        let s:expts_first_idx = max([0, s:num_expts-g:vim_mlflow_expts_length])
-    elseif l:curpos[1]>l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs &&
-     \     l:curpos[1]<=l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs+g:vim_mlflow_runs_length &&
+        let s:expts_first_idx = max([0, s:num_expts-s:actual_expts_length])
+    elseif l:curpos[1]>l:top_to_expts+s:actual_expts_length+l:expts_to_runs &&
+     \     l:curpos[1]<=l:top_to_expts+s:actual_expts_length+l:expts_to_runs+s:actual_runs_length &&
      \     s:runs_first_idx < s:num_runs-1
         "let s:runs_first_idx = s:num_runs-1
-        let s:runs_first_idx = max([0, s:num_runs-g:vim_mlflow_runs_length])
+        let s:runs_first_idx = max([0, s:num_runs-s:actual_runs_length])
     endif
     call RefreshMLflowBuffer(0)
 endfunction
@@ -529,12 +531,14 @@ function! ScrollListTop()
     let l:top_to_expts = 6
     let l:expts_to_runs = 4
     let l:curpos = getpos('.')
+    let s:actual_expts_length = min([g:vim_mlflow_expts_length, s:num_expts])
+    let s:actual_runs_length = min([g:vim_mlflow_runs_length, s:num_runs])
     if l:curpos[1]>l:top_to_expts &&
-     \ l:curpos[1]<=l:top_to_expts+g:vim_mlflow_expts_length &&
+     \ l:curpos[1]<=l:top_to_expts+s:actual_expts_length &&
      \ s:expts_first_idx > 0
         let s:expts_first_idx = 0
-    elseif l:curpos[1]>l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs &&
-     \     l:curpos[1]<=l:top_to_expts+g:vim_mlflow_expts_length+l:expts_to_runs+g:vim_mlflow_runs_length &&
+    elseif l:curpos[1]>l:top_to_expts+s:actual_expts_length+l:expts_to_runs &&
+     \     l:curpos[1]<=l:top_to_expts+s:actual_expts_length+l:expts_to_runs+s:actual_runs_length &&
      \     s:runs_first_idx > 0
         let s:runs_first_idx = 0
     endif
