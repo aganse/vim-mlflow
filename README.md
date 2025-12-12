@@ -26,7 +26,7 @@ traces/etc currently).
 > </SUP>
 <P>&nbsp;<P>
 
-[![example vim-mlflow screenshot](doc/demo.gif)](doc/demo.gif)
+[![example vim-mlflow screenshot](doc/demo_1.0.0_light.gif)](doc/demo_1.0.0_light.gif)
 
 ## Summary
 * Open a sidebar (`__MLflow__`) that lists all experiments on the connected
@@ -199,12 +199,12 @@ Full list of vim-mlflow config variables that may be of interest to set in .vimr
 
 ## Making the animated screen-shot gif
 
-* `pip install [asciinema](https://github.com/asciinema/asciinema)`
-* `asciinema rec demo.cast  # start recording terminal screen to file`
-* [manually conduct the usage example sequence, which gets saved to file]
-* install [agg](https://github.com/asciinema/agg) from e.g.
-  [premade binary for mac](https://github.com/asciinema/agg/releases/download/v1.3.0/agg-aarch64-apple-darwin)
-* `agg --speed 2 demo.cast demo.gif`  # convert the asciinema cast to animated gif
+* Install [rust](https://rust-lang.org/tools/install) (`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`)
+* Install [asciinema](https://github.com/asciinema/asciinema) (`cargo install --locked --git https://github.com/asciinema/asciinema`)
+* `~/.cargo/bin/asciinema rec demo.cast  # start recording terminal screen to file`
+* Manually conduct the usage sequence to record, which gets saved to file; ctrl-D to exit/end when done.
+* Install [agg](https://github.com/asciinema/agg) (`cargo install --git https://github.com/asciinema/agg`)
+* `~/.cargo/bin/agg --speed 2 demo.cast demo.gif  # convert the asciinema cast to animated gif`
 
 
 
