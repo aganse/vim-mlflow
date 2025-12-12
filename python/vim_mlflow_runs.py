@@ -3,12 +3,21 @@ import re
 from urllib.request import urlopen, Request
 
 import mlflow
-from mlflow.entities import ViewType, LifecycleStage
+from mlflow.entities import ViewType
+from mlflow.tracking import MlflowClient
 import pandas as pd
 import vim
 import warnings
 
-warnings.simplefilter(action='ignore', category=FutureWarning)
+#warnings.simplefilter(action='ignore', category=FutureWarning)
+
+from vim_mlflow_utils import format_run_duration
+
+VIEWTYPE_MAP = {
+    1: ViewType.ACTIVE_ONLY,
+    2: ViewType.DELETED_ONLY,
+    3: ViewType.ALL,
+}
 
 
 def getRunsPageMLflow(mlflow_tracking_uri):
@@ -28,8 +37,12 @@ def getRunsPageMLflow(mlflow_tracking_uri):
     if verifyTrackingUrl(mlflow_tracking_uri, timeout=float(vim.eval("g:vim_mlflow_timeout"))):
 
         # Find full runids for the short-runids in s:markruns_list
+        client = MlflowClient(tracking_uri=mlflow_tracking_uri)
+        view_idx = int(vim.eval("g:vim_mlflow_viewtype"))
+        view_type = VIEWTYPE_MAP.get(view_idx, ViewType.ACTIVE_ONLY)
+        runinfos = []
         if vim.eval("s:current_exptid") != "":
-            runinfos = mlflow.search_runs(vim.eval("s:current_exptid"), output_format='list', run_view_type=int(vim.eval("g:vim_mlflow_viewtype")))
+            runinfos = client.search_runs([str(vim.eval("s:current_exptid"))], run_view_type=view_type)
         fullmarkrunids = []
         for run in runinfos:
             if run.info.run_id[:5] in vim.eval("s:markruns_list"):
@@ -37,7 +50,7 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         if len(fullmarkrunids) < len(vim.eval("s:markruns_list")):
             for exptid in set(vim.eval("s:markruns_exptids")):
                 if exptid != vim.eval("s:current_exptid"):
-                    runinfos = mlflow.search_runs(exptid, output_format='list', run_view_type=int(vim.eval("g:vim_mlflow_viewtype")))
+                    runinfos = client.search_runs([str(exptid)], run_view_type=view_type)
                     for run in runinfos:
                         if run.info.run_id[:5] in vim.eval("s:markruns_list"):
                             fullmarkrunids.append(run.info.run_id)
@@ -45,7 +58,7 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         # Loop over marked full-runids to get their complete info for display:
         runsforpd = []
         for runid in fullmarkrunids:
-            mldict = mlflow.get_run(runid).to_dictionary()
+            mldict = client.get_run(runid).to_dictionary()
             rundict = mldict["info"]
             if vim.eval("s:runs_tags_are_showing")=='1':
                 rundict.update(mldict["data"]["tags"])
@@ -92,17 +105,35 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         # Some final formatting
         runsdf["expt_id"] = runsdf["expt_id"].apply(lambda x: "#"+x)
         runsdf["run_id"] = runsdf["run_id"].apply(lambda x: "#"+x)
-        runsdf["start_time"] = runsdf["start_time"].apply(lambda x: round(x/1.0e9))
-        runsdf["end_time"] = runsdf["end_time"].apply(lambda x: round(x/1.0e9))
-        runsdf["start_time"] = pd.to_datetime(runsdf["start_time"], unit="s")
-        runsdf["end_time"] = pd.to_datetime(runsdf["end_time"], unit="s")
+        if "start_time" in runsdf.columns:
+            runsdf["start_time"] = pd.to_numeric(runsdf["start_time"], errors="coerce")
+            runsdf["start_time"] = pd.to_datetime(runsdf["start_time"], unit="ms", errors="coerce")
+        if "end_time" in runsdf.columns:
+            runsdf["end_time"] = pd.to_numeric(runsdf["end_time"], errors="coerce")
+            runsdf["end_time"] = pd.to_datetime(runsdf["end_time"], unit="ms", errors="coerce")
+        insert_idx = len(runsdf.columns)
+        if "status" in runsdf.columns:
+            insert_idx = runsdf.columns.get_loc("status") + 1
+        elif "user" in runsdf.columns:
+            insert_idx = runsdf.columns.get_loc("user")
+        if "start_time" in runsdf.columns and "end_time" in runsdf.columns:
+            timedeltas = runsdf["end_time"] - runsdf["start_time"]
+            duration_col = timedeltas.apply(
+                lambda td: format_run_duration(td.total_seconds() if not pd.isna(td) else None)
+            )
+        else:
+            duration_col = pd.Series("-", index=runsdf.index)
+        runsdf.insert(insert_idx, "duration", duration_col)
         runsdf = runsdf.sort_values(["expt_id", "start_time"], ascending=False)
 
         # Collapse specified columns
         colnames = runsdf.columns.values
         for colidstr in vim.eval("s:collapsedcols_list"):
-            runsdf.iloc[:, int(colidstr)] = ":"
-            colnames[int(colidstr)] = ":"
+            col_idx = int(colidstr)
+            colname = runsdf.columns[col_idx]
+            runsdf[colname] = runsdf[colname].astype(str)
+            runsdf[colname] = ":"
+            colnames[col_idx] = ":"
         runsdf.columns = colnames
 
         # Hide (remove) specified columns
