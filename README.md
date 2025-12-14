@@ -15,7 +15,8 @@ steps).
 [![example vim-mlflow screenshot](doc/demo_1.0.0_light.gif)](doc/demo_1.0.0_light.gif)
 
 
-## Summary
+## Feature Summary
+In `vim-mlflow` you can:
 * Open a sidebar (`__MLflow__`) that lists all experiments on the connected
   MLflow server.
 * Expand experiments to see individual runs.
@@ -23,7 +24,7 @@ steps).
 * Open a run comparison pane (`__MLflowRuns__`) to compare metrics
   across multiple selected runs.
 * View ASCII plots of metric histories, and text artifacts inline.
-* Completely configurable via Vim variables (e.g. in your ~/.vimrc file).
+* Completely configure vim-mlflow via Vim variables (e.g. in your resource file).
 
 > [!IMPORTANT]
 > `vim‑mlflow` requires a Python3‑enabled version of classic Vim (or Python
@@ -40,70 +41,59 @@ steps).
 `vim‑mlflow` works in Vim/NVim versions with python3 support.
 
 #### 1. Check that your Vim supports python3:
-In Vim:
-- `vim --version | grep +python3`
+- In Vim: `vim --version | grep +python3`
 - (If no +python3 line is found, install a Vim build that was compiled with Python3.)
-
-In NVim you're good to go as long as you install pynvim in your python env down in #3.
+- In NVim you're good to go as long as you install pynvim in your python env down in #3.
 
 #### 2. Highly recommended to create/use a virtual environment:
 - `python3 -m venv .venv`
 - `source .venv/bin/activate  # syntax for linux/mac`
 - (Technically this step is optional if you really resist, but it's recommended.)
 
-#### 3. Install the `mlflow` Python package:
-In both Vim and NVim:
-- `pip install mlflow`
-- The plugin imports and uses this mlflow package to connect to your MLflow
-  tracking server.  For the relatively basic functions in this plugin, the
-  version of the MLflow package doesn't need to exactly match that of your
-  tracking server.
+#### 3. Install the `mlflow` Python package (and also `pynvim` for Nvim):
+- `pip install mlflow` (in both Vim and NVim)
+- Vim-mlflow imports and uses this mlflow package to connect to your MLflow
+  tracking server.  Vim-mlflow was designed so that the version of the MLflow
+  package doesn't need to exactly match that of your tracking server.
+- In NVim you also need this package in your env to support the python:
+  `pip install pynvim`
 
-In NVim you also need this package in your env to support the python:
-- `pip install pynvim`
-
-#### 4. Load the plugin in your Vim/NVim resource file:
-Add the plugin to your plugin manager, e.g. in Vim's `~/.vimrc`:
-- with *Vundle* add `Plugin 'aganse/vim-mlflow'` to .vimrc, run `:PluginInstall`.
-- with *Plug* add `Plug 'aganse/vim-mlflow'` to .vimrc, run `:PlugInstall`.
-- etc.
-
-Or just do it manually, e.g. for Vim:
-- `cp -r . ~/.vim/plugin/vim-mlflow`
-Or in NVim's `~/.config/nvim/init.vim`:
-- put in resource file: `set runtimepath+=/Users/aganse/Documents/src/python/vim-mlflow`
+#### 4. Load Vim-mlflow in your Vim/NVim resource file:
+- Add the plugin to your plugin manager, e.g. in Vim's `~/.vimrc` with *Vundle*
+  add `Plugin 'aganse/vim-mlflow'` and run `:PluginInstall`.
+- Or just do it manually, e.g. for Vim `cp -r . ~/.vim/plugin/vim-mlflow`.
+- Or in NVim's `~/.config/nvim/init.vim` add vim-mlflow in resource file:
+  `set runtimepath+=/Users/aganse/Documents/src/python/vim-mlflow`
 
 #### 5. Set your config settings in your Vim/NVim resource file:
-I.e. in your `~/.vimrc` or `~/.config/nvim/init.vim`:
+- Required: set your MLflow tracking URI (fyi this is the default value if you
+  don't set it, maybe relevant for local test setup, but likely you'll have
+  some other host and port in more general use:
+  `let g:mlflow_tracking_uri = "http://localhost:5000"`
 
-Required: set your MLflow tracking URI (fyi this is the default value if you
-don't set it, maybe relevant for local test setup, but likely you'll have
-some other host and port to reference here:
-- `let g:mlflow_tracking_uri = "http://localhost:5000"`
+- A few other key config settings you'll likely want to set (but not required);
+  see Configuration section below for their explanations:
+  `let g:vim_mlflow_icon_useunicode = 1`
+  `let g:vim_mlflow_expts_length = 10`
+  `let g:vim_mlflow_runs_length = 20`
 
-A few other key config settings you'll likely want to set (but not required);
-see Configuration section below for their explanations:
-`let g:vim_mlflow_icon_useunicode = 1`
-`let g:vim_mlflow_expts_length = 10`
-`let g:vim_mlflow_runs_length = 20`
-
-And myself I like to take advantage of the current colorscheme's syntax
-hightlighting to color elements of vim-mlflow's layout (see e.g. the
-animated GIF above).  These elements are simply set to standard color groups
-like "Comment" and "Statement" and so on, so that whatever your colorscheme
-is it should work in vim-mlflow.  But you can change all those details via
-additional vim-mlflow configuration settings; again see the Configuration
-section below.
-
-Lastly, in NVim I've found there's a quirk relevant to this plugin that's not
-in classic Vim, which is that line wrapping is turned on by default, messing up
-the layout of displayed tables in this plugin (whereas that's off by default in
-classic).  The quick and easy way I handle this in NVim is adding this line to
-resource file: `setlocal nowrap` - just note that'll apply to all your buffers.
-If that setting is a problem for you, note that depending how long your MLflow
-run names are, you might not even notice this issue until you open the
-__MLflowRuns__ window (via `R`), which displays many columns of metrics and tags
-and parameters.
+- Myself I like to take advantage of the current colorscheme's syntax
+  hightlighting to color elements of vim-mlflow's layout (see e.g. the
+  animated GIF above).  These elements are simply set to standard color groups
+  like "Comment" and "Statement" and so on, so that whatever your colorscheme
+  is it should work in vim-mlflow.  But you can change all those details via
+  additional vim-mlflow configuration settings; again see the Configuration
+  section below.
+  
+- Lastly, in NVim I've found there's a quirk relevant to this plugin that's not
+  in classic Vim, which is that line wrapping is turned on by default, messing up
+  the layout of displayed tables in this plugin (whereas that's off by default in
+  classic).  The quick and easy way I handle this in NVim is adding this line to
+  resource file: `setlocal nowrap` - just note that'll apply to all your buffers.
+  If that setting is a problem for you, note that depending how long your MLflow
+  run names are, you might not even notice this issue until you open the
+  __MLflowRuns__ window (via `R`), which displays many columns of metrics and tags
+  and parameters.
 
 
 ## Usage
