@@ -17,6 +17,7 @@ steps).
 
 ## Feature Summary
 In `vim-mlflow` you can:
+* Press `\m` to start vim-mlflow (default setting, ie leader-key and `m`).
 * Open a sidebar (`__MLflow__`) that lists all experiments on the connected
   MLflow server.
 * Expand experiments to see individual runs.
@@ -80,9 +81,9 @@ In `vim-mlflow` you can:
 - I like to take advantage of the current colorscheme's syntax hightlighting to
   color elements of vim-mlflow's layout (see e.g. the animated GIF above which
   used [PaperColor](https://github.com/vim-scripts/PaperColor.vim) colorscheme;
-  see also its equivalent [dark-mode equivalent animated GIF](demo_1.0.0_dark.gif)).
+  see also its equivalent [dark-mode equivalent animated GIF](doc/demo_1.0.0_dark.gif)).
   Vim-mlflow uses standard color groups like "Comment" and "Statement" to color
-  its components so that whatever your colorscheme is it should work in
+  its components so that whatever your colorscheme is it should "just work" in
   vim-mlflow.  All details can be changed; see the Configuration section below.
   With no configuration, ascii characters with no color are used.
 
