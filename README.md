@@ -61,7 +61,7 @@ In `vim-mlflow` you can:
   `pip install pynvim`
 
 #### 4. Load Vim-mlflow in your Vim/NVim resource file:
-- Add the plugin to your plugin manager, e.g. in Vim with *Vundle* add
+- Add the plugin to your plugin manager, e.g. in Vim using Vundle add
   `Plugin 'aganse/vim-mlflow'` to your `~/.vimrc` and run `:PluginInstall`.
 - Or just do it manually, e.g. for Vim, in vim-flow repo dir
   `cp -r . ~/.vim/plugin/vim-mlflow`.
@@ -70,29 +70,21 @@ In `vim-mlflow` you can:
 
 #### 5. Set your config settings in your Vim/NVim resource file:
 - Generally required: set your MLflow tracking URI.  Fyi this is the default
-  value if you don't set it, maybe relevant for local test setup, but very
+  value if you don't set it, maybe relevant for simple local test setup, but
   likely you'll have some other host and port in more general use:
   `let g:mlflow_tracking_uri = "http://localhost:5000"`
-
-- Myself I like to take advantage of the current colorscheme's syntax
-  hightlighting to color elements of vim-mlflow's layout (see e.g. the
-  animated GIF above).  These elements are simply set to standard color groups
-  like "Comment" and "Statement" and so on, so that whatever your colorscheme
-  is it should work in vim-mlflow.  But you can change all those details via
-  additional vim-mlflow configuration settings; again see the Configuration
-  section below.  With no configuration, ascii characters with no color are used.
-  The colorscheme I used in the animated GIF above was
-  [PaperColor](https://github.com/vim-scripts/PaperColor.vim).
   
-- Lastly, in NVim I've found there's a quirk relevant to this plugin that's not
-  in classic Vim, which is that line wrapping is turned on by default, messing up
-  the layout of displayed tables in this plugin (whereas that's off by default in
-  classic).  The quick and easy way I handle this in NVim is adding this line to
-  resource file: `setlocal nowrap` - just note that'll apply to all your buffers.
-  If that setting is a problem for you, note that depending how long your MLflow
-  run names are, you might not even notice this issue until you open the
-  __MLflowRuns__ window (via `R`), which displays many columns of metrics and tags
-  and parameters.
+- For NVim you may wish to set `setlocal nowrap` in your resource file - see
+  last Troubleshooting tip below regarding line-wrap default in NVim.
+
+- I like to take advantage of the current colorscheme's syntax hightlighting to
+  color elements of vim-mlflow's layout (see e.g. the animated GIF above which
+  used [PaperColor](https://github.com/vim-scripts/PaperColor.vim) colorscheme;
+  see also its equivalent [dark-mode equivalent animated GIF](demo_1.0.0_dark.gif)).
+  Vim-mlflow uses standard color groups like "Comment" and "Statement" to color
+  its components so that whatever your colorscheme is it should work in
+  vim-mlflow.  All details can be changed; see the Configuration section below.
+  With no configuration, ascii characters with no color are used.
 
 
 ## Usage
@@ -122,7 +114,7 @@ series.  Press `?` in the sidebar for a full help listing of the keys map.
 
 
 ## Configuration
-Only `g:mlflow_tracking_uri` is required to be set by user (e.g. in .vimrc).
+Only `g:mlflow_tracking_uri` is required to be set by user (e.g. in resource file).
 But a typical small set of vim-mlflow config variables that one might set is:
 ```vim
 " Vim-mlflow settings
@@ -199,6 +191,16 @@ Full list of vim-mlflow config variables that may be of interest to set in .vimr
   you installed `pynvim` in your python environment in addition to `mlflow`.
 - In NVim if the layout seems screwy, check step 5 above in Installation
   regarding `nowrap`.
+- In NVim I've found there's a quirk relevant to this plugin that's not
+  in classic Vim, which is that line wrapping is turned on by default, messing
+  up the layout of displayed tables in this plugin (whereas that's off by
+  default in classic).  The quick and easy way I handle this in NVim is adding
+  this line to resource file: `setlocal nowrap` - just note that'll apply to all
+  your buffers.  If that setting is a problem for you, note that depending how
+  long your MLflow run names are, you might not even notice this issue until
+  you open the __MLflowRuns__ window (via `R`), which displays many columns of
+  metrics and tags and parameters.
+
 
 
 ## Legacy/older versions
