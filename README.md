@@ -1,32 +1,19 @@
 # vim-mlflow
-![version](https://img.shields.io/badge/version-1.0.0-green.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+![version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
-`vim‑mlflow` is a lightweight Vim plugin that lets you browse and interact with
-MLflow experiments, runs, metrics, parameters, tags, and artifacts directly
+`vim‑mlflow` is a lightweight Vim/NVim plugin that lets you browse and interact
+with MLflow experiments, runs, metrics, parameters, tags, and artifacts directly
 in your Vim editor.  It opens a dedicated sidebar and a detail pane so you can
 explore data without leaving the terminal, even allowing you to plot metric
 histories and browse non-graphical artifacts.  The plugin is written in
 Vimscript with embedded Python and talks to MLflow through its Python API.
-It works with both MLflow3.x and MLflow2.x ML tracking servers (but not GenAI
-traces/etc currently).
-
-> <SUP>
-> :bulb: Note this repo is part of a group that you might find useful together
-> (but all are separate tools that can be used independently):
->
-> * [aganse/docker_mlflow_db](https://github.com/aganse/docker_mlflow_db):
->     ready-to-run MLflow server with PostgreSQL, AWS S3, Nginx
->
-> * [aganse/py_tf2_gpu_dock_mlflow](https://github.com/aganse/py_tf2_gpu_dock_mlflow):
->     ready-to-run Python/Tensorflow2/MLflow-Projects setup to train models on GPU
->
-> * [aganse/vim_mlflow](https://github.com/aganse/vim-mlflow):
->     a Vim plugin to browse the MLflow parameters and metrics instead of GUI
-> </SUP>
-<P>&nbsp;<P>
+It works with both MLflow3.x and MLflow2.x ML tracking servers (but not the
+GenAI traces/etc in MLflow3.x currently; feedback/demand can guide such future
+steps).
 
 [![example vim-mlflow screenshot](doc/demo_1.0.0_light.gif)](doc/demo_1.0.0_light.gif)
+
 
 ## Summary
 * Open a sidebar (`__MLflow__`) that lists all experiments on the connected
@@ -39,42 +26,84 @@ traces/etc currently).
 * Completely configurable via Vim variables (e.g. in your ~/.vimrc file).
 
 > [!IMPORTANT]
-> `vim‑mlflow` requires a Python3‑enabled Vim and the `mlflow` Python package
-> installed in the same environment that Vim is launched from.  You'll also want
-> to make sure that the version of Python3 with which you created your Python
-> environment matches the version of Python3 in your vim installation (e.g. you
-> can check this in vim with `:py3 import sys; print(sys.version)`).  If you
-> just use the latest version of everything you probably won't have any issue.
-
+> `vim‑mlflow` requires a Python3‑enabled version of classic Vim (or Python
+> package `pynvim` installed for NVim) and the `mlflow` Python package installed
+> in the same environment that Vim/NVim is launched from.  You'll also want to
+> make sure that the version of Python3 with which you created your Python
+> environment matches the version of Python3 in your vim installation (e.g. in
+> classic Vim you can check this in vim with `:py3 import sys; print(sys.version)`).
+> If you just use the latest version of everything you probably won't have any
+> issue here.
 
 
 ## Installation
-`vim‑mlflow` works in Vim versions compiled with python3 support.
+`vim‑mlflow` works in Vim/NVim versions with python3 support.
 
 #### 1. Check that your Vim supports python3:
+In Vim:
 - `vim --version | grep +python3`
 - (If no +python3 line is found, install a Vim build that was compiled with Python3.)
+
+In NVim you're good to go as long as you install pynvim in your python env down in #3.
 
 #### 2. Highly recommended to create/use a virtual environment:
 - `python3 -m venv .venv`
 - `source .venv/bin/activate  # syntax for linux/mac`
-- (Technically this step is optional if you really insist, but it's recommended.)
+- (Technically this step is optional if you really resist, but it's recommended.)
 
 #### 3. Install the `mlflow` Python package:
+In both Vim and NVim:
 - `pip install mlflow`
 - The plugin imports and uses this mlflow package to connect to your MLflow
   tracking server.  For the relatively basic functions in this plugin, the
   version of the MLflow package doesn't need to exactly match that of your
   tracking server.
 
-#### 4. Add the plugin to your plugin manager:
-- *Vundle* add `Plugin 'aganse/vim-mlflow'` to .vimrc, run `:PluginInstall`.
-- *Plug* add `Plug 'aganse/vim-mlflow'` to .vimrc, run `:PlugInstall`.
-- *Or just path‑based* `cp -r . ~/.vim/plugin/vim-mlflow`
+In NVim you also need this package in your env to support the python:
+- `pip install pynvim`
 
-#### 5. Set your MLflow tracking URI (and any other config settings you like) in your ~/.vimrc:
+#### 4. Load the plugin in your Vim/NVim resource file:
+Add the plugin to your plugin manager, e.g. in Vim's `~/.vimrc`:
+- with *Vundle* add `Plugin 'aganse/vim-mlflow'` to .vimrc, run `:PluginInstall`.
+- with *Plug* add `Plug 'aganse/vim-mlflow'` to .vimrc, run `:PlugInstall`.
+- etc.
+
+Or just do it manually, e.g. for Vim:
+- `cp -r . ~/.vim/plugin/vim-mlflow`
+Or in NVim's `~/.config/nvim/init.vim`:
+- put in resource file: `set runtimepath+=/Users/aganse/Documents/src/python/vim-mlflow`
+
+#### 5. Set your config settings in your Vim/NVim resource file:
+I.e. in your `~/.vimrc` or `~/.config/nvim/init.vim`:
+
+Required: set your MLflow tracking URI (fyi this is the default value if you
+don't set it, maybe relevant for local test setup, but likely you'll have
+some other host and port to reference here:
 - `let g:mlflow_tracking_uri = "http://localhost:5000"`
 
+A few other key config settings you'll likely want to set (but not required);
+see Configuration section below for their explanations:
+`let g:vim_mlflow_icon_useunicode = 1`
+`let g:vim_mlflow_expts_length = 10`
+`let g:vim_mlflow_runs_length = 20`
+
+And myself I like to take advantage of the current colorscheme's syntax
+hightlighting to color elements of vim-mlflow's layout (see e.g. the
+animated GIF above).  These elements are simply set to standard color groups
+like "Comment" and "Statement" and so on, so that whatever your colorscheme
+is it should work in vim-mlflow.  But you can change all those details via
+additional vim-mlflow configuration settings; again see the Configuration
+section below.
+
+Lastly, in NVim I've found there's a quirk relevant to this plugin that's not
+in classic Vim, which is that line wrapping is turned on by default, messing up
+the layout of displayed tables in this plugin (whereas that's off by default in
+classic).  The quick and easy way I handle this in NVim is adding this line to
+resource file: `setlocal nowrap` - just note that'll apply to all your buffers.
+If that setting is a problem for you, note that depending how long your MLflow
+run names are, you might not even notice this issue until you open the
+__MLflowRuns__ window (via `R`), which displays many columns of metrics and tags
+and parameters.
 
 
 ## Usage
@@ -103,9 +132,7 @@ it on a metric with a history will open an ASCII plot of that metric's time
 series.  Press `?` in the sidebar for a full help listing of the keys map.
 
 
-
 ## Configuration
-
 Only `g:mlflow_tracking_uri` is required to be set by user (e.g. in .vimrc).
 But a typical small set of vim-mlflow config variables that one might set is:
 ```vim
@@ -160,11 +187,7 @@ Full list of vim-mlflow config variables that may be of interest to set in .vimr
 | `g:vim_mlflow_artifacts_max_depth` | Maximum artifact directory depth shown when expanding folders (default `3`)|
 
 
-
 ## Troubleshooting
-
-- If the plugin fails to load, double-check that `mlflow` is importable from
-  the Python environment embedded in Vim (`:py3 import mlflow` should succeed).
 - The sidebar can be slow on high-latency connections to MLflow, because as
   currently implemented, each refresh spins up a short-lived Python process and
   re-queries MLflow anew.  Running Vim close to the tracking server seems to
@@ -180,25 +203,49 @@ Full list of vim-mlflow config variables that may be of interest to set in .vimr
 - Can I view non‑text artifacts? – Text files (`*.txt`, `*.json`, `*.yaml`,
   `MLmodel`) open directly in the plugin.  Binary artifacts' filenames are
   shown but cannot be opened in terminal.
-
+- In classic Vim if the plugin fails to load, check that your Vim version
+  supports python (`vim --version`).  Also double-check that `mlflow` is
+  importable from the Python environment embedded in Vim (`:py3 import mlflow`
+  should succeed).  In Nvim if the plugin fails to load, double-check that
+  you installed `pynvim` in your python environment in addition to `mlflow`.
+- In NVim if the layout seems screwy, check step 5 above in Installation
+  regarding `nowrap`.
 
 
 ## Legacy/older versions
-
    Legacy/older versions of this plugin can be accessed by git checking out an
-   earlier version locally, and then referencing it in your .vimrc like
-   (e.g. for Vundle) `Plugin 'file:///my/path/to/python/vim-mlflow'`.
+   earlier version locally, and then referencing it in your .vimrc (for classic
+   Vim like `Plugin 'file:///my/path/to/python/vim-mlflow'`.
+   Or similarly you can set that path in your runtimepath in NVim (without the
+   `file://`).
+   That said, it's recommended to use >= v1.0.0 - that's the first "official"
+   release (I'll just keep adding to this table as more releases come out).
 
-   |  vim-mlflow git tag  | tested with mlflow version |
-   | ---------------------| -------------------------- |
-   | v0.8                 |  1.26.1                    |
-   | v0.9                 |  1.30.0, 2.7.1             |
-   | v1.0.0 (this version)|  2.12.0, 2.19.0, 3.6.0     |
+   |  vim-mlflow git tag  | tested with mlflow version | tested with vim version |
+   | ---------------------| -------------------------- | ----------------------- |
+   | v0.8                 |  1.26.1                    | vim 8.2                 |
+   | v0.9                 |  1.30.0, 2.7.1             | vim 8.2                 |
+   | v1.0.0 (this version)|  2.12.0, 2.19.0, 3.6.0     | vim 9.1, nvim v0.11.5   |
 
+
+## Related repos by aganse
+Vim-mlflow is part of a group of tools that you might find useful together (but
+all are separate tools that can be used independently):
+
+* [aganse/docker_mlflow_db](https://github.com/aganse/docker_mlflow_db):
+    ready-to-run MLflow server with PostgreSQL, AWS S3, Nginx
+
+* [aganse/py_torch_gpu_dock_mlflow](https://github.com/aganse/py_torch_gpu_dock_mlflow):
+    ready-to-run Python/PyTorch/MLflow-Projects setup to train models on GPU
+
+* [aganse/py_tf2_gpu_dock_mlflow](https://github.com/aganse/py_tf2_gpu_dock_mlflow):
+    ready-to-run Python/Tensorflow2/MLflow-Projects setup to train models on GPU
+
+* [aganse/vim_mlflow](https://github.com/aganse/vim-mlflow):
+    a Vim plugin to browse the MLflow parameters and metrics instead of GUI
 
 
 ## Making the animated screen-shot gif
-
 * Install [rust](https://rust-lang.org/tools/install) (`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`)
 * Install [asciinema](https://github.com/asciinema/asciinema) (`cargo install --locked --git https://github.com/asciinema/asciinema`)
 * `~/.cargo/bin/asciinema rec demo.cast  # start recording terminal screen to file`
@@ -207,9 +254,7 @@ Full list of vim-mlflow config variables that may be of interest to set in .vimr
 * `~/.cargo/bin/agg --speed 2 demo.cast demo.gif  # convert the asciinema cast to animated gif`
 
 
-
 ## Acknowledgements
-
 With many thanks to:
 * The Writing Vim plugin in Python article by Timur Rubeko, 2017 Aug 11, at
   http://candidtim.github.io/vim/2017/08/11/write-vim-plugin-in-python.html
