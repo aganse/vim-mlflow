@@ -15,6 +15,25 @@ steps).
 [![example vim-mlflow screenshot](doc/demo_1.0.0_light.gif)](doc/demo_1.0.0_light.gif)
 
 
+## TL;DR
+* Vim must be a compiled-with-python version (check `vim --verison` for `+python3`);
+* Must run Vim/NVim in a python environment with `mlflow` installed (or for
+  NVim also the `pynvim` package installed).
+* Put `Plugin 'aganse/vim-mlflow'` or package manager equivalent in your resource
+  file to load this plugin.
+* At minimum set `let g:mlflow_tracking_uri = "http://localhost:5000"` in your
+  resource file to set MLflow server.
+* Installation and configuration sections below tell about setting options like
+  colorization and unicode characters (default is ascii characters using your
+  current colorscheme).
+* Press `\m` (leader-key and `m`) to start the plugin, and use `?` in there to
+  check the help listing for other keys.
+
+And of course you can RTFM below for details on Features, Installation, Usage,
+Configuration, Troubleshooting, Legacy/older versions, Related repos by aganse,
+Making the animated screen-shot gif, and Acknowledgements.
+
+
 ## Feature Summary
 In `vim-mlflow` you can:
 * Press `\m` to start vim-mlflow (default setting, ie leader-key and `m`).
@@ -81,7 +100,7 @@ In `vim-mlflow` you can:
 - I like to take advantage of the current colorscheme's syntax hightlighting to
   color elements of vim-mlflow's layout (see e.g. the animated GIF above which
   used [PaperColor](https://github.com/vim-scripts/PaperColor.vim) colorscheme;
-  see also its equivalent [dark-mode equivalent animated GIF](doc/demo_1.0.0_dark.gif)).
+  see also its [dark-mode equivalent animated GIF](doc/demo_1.0.0_dark.gif)).
   Vim-mlflow uses standard color groups like "Comment" and "Statement" to color
   its components so that whatever your colorscheme is it should "just work" in
   vim-mlflow.  All details can be changed; see the Configuration section below.
