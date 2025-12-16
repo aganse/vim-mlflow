@@ -16,22 +16,19 @@ steps).
 
 
 ## TL;DR
+* Must run Vim/NVim in a python environment with `mlflow` installed.
 * Vim must be a compiled-with-python version (check `vim --verison` for `+python3`);
-* Must run Vim/NVim in a python environment with `mlflow` installed (or for
-  NVim also the `pynvim` package installed).
-* Put `Plugin 'aganse/vim-mlflow'` or package manager equivalent in your resource
-  file to load this plugin.
-* At minimum set `let g:mlflow_tracking_uri = "http://localhost:5000"` in your
-  resource file to set MLflow server.
-* Installation and configuration sections below tell about setting options like
-  colorization and unicode characters (default is ascii characters using your
-  current colorscheme).
-* Press `\m` (leader-key and `m`) to start the plugin, and use `?` in there to
+  or for NVim just install the `pynvim` package in that python environment as well.
+* Put `Plugin 'aganse/vim-mlflow'` or your package manager equivalent in your
+  resource file to load plugin.
+* At minimum set `let g:mlflow_tracking_uri = "http://<mlflow_trk_svr_host>:<port>"`
+  in your resource file to your MLflow tracking server.  Other options listed below.
+* Press `\m` (leader-key and `m`) to start the plugin, and press `?` in there to
   check the help listing for other keys.
 
-And of course you can RTFM below for details on Features, Installation, Usage,
+Of course you can RTFM below for details on Features, Installation, Usage,
 Configuration, Troubleshooting, Legacy/older versions, Related repos by aganse,
-Making the animated screen-shot gif, and Acknowledgements.
+Making the animated screen-shot gif, and Acknowledgements. :wink:
 
 
 ## Feature Summary
@@ -89,22 +86,16 @@ In `vim-mlflow` you can:
   `set runtimepath+=/Users/aganse/Documents/src/python/vim-mlflow`
 
 #### 5. Set your config settings in your Vim/NVim resource file:
-- Generally required: set your MLflow tracking URI.  Fyi this is the default
-  value if you don't set it, maybe relevant for simple local test setup, but
-  likely you'll have some other host and port in more general use:
-  `let g:mlflow_tracking_uri = "http://localhost:5000"`
-  
-- For NVim you may wish to set `setlocal nowrap` in your resource file - see
-  last Troubleshooting tip below regarding line-wrap default in NVim.
+- Generally required: set your MLflow tracking URI.  Fyi the default is set
+  to `http://localhost:5000` if you don't set it, maybe relevant for simple
+  local test setup, but often you'll have some other host and port to set:
+  `let g:mlflow_tracking_uri = "http://<mlflow_trk_svr_host>:<port>"`
 
-- I like to take advantage of the current colorscheme's syntax hightlighting to
-  color elements of vim-mlflow's layout (see e.g. the animated GIF above which
-  used [PaperColor](https://github.com/vim-scripts/PaperColor.vim) colorscheme;
-  see also its [dark-mode equivalent animated GIF](doc/demo_1.0.0_dark.gif)).
-  Vim-mlflow uses standard color groups like "Comment" and "Statement" to color
-  its components so that whatever your colorscheme is it should "just work" in
-  vim-mlflow.  All details can be changed; see the Configuration section below.
-  With no configuration, ascii characters with no color are used.
+- The Configuration section has quite a list of settings (colors, characters,
+  sizing, etc) that can be customized.
+  
+- For NVim you may need to set `setlocal nowrap` in your resource file - see
+  last Troubleshooting tip below regarding line-wrap default in NVim.
 
 
 ## Usage
@@ -145,82 +136,39 @@ let g:vim_mlflow_expts_length = 10  " experiments to show at a time
 let g:vim_mlflow_runs_length = 15   " runs to show at a time
 ```
 
-Full list of vim-mlflow config variables that may be of interest to set in .vimrc:
-|           variable               |               description               |
-| -------------------------------- | --------------------------------------- |
-| `g:mlflow_tracking_uri` _(required)_ | The MLFLOW_TRACKING_URI of the MLflow tracking server to connect to (default is `"http://localhost:5000"`)|
-| `g:vim_mlflow_timeout`           | Timeout in float seconds if cannot access MLflow tracking server (default is 0.5)|
-| `g:vim_mlflow_buffername`        | Buffername of the MLflow side pane (default is `__MLflow__`)|
-| `g:vim_mlflow_runs_buffername`   | Buffername of the MLflowRuns side pane (default is `__MLflow__`)|
-| `g:vim_mlflow_vside`             | Which side to open the MLflow pane on: 'left' or 'right' (default is `right`)|
-| `g:vim_mlflow_hside`             | Whether to open the MLflowRuns pane 'below' or 'above' (default is `below`)|
-| `g:vim_mlflow_width`             | Width of the vim-mlflow window in chars (default is 70)|
-| `g:vim_mlflow_height`            | Width of the vim-mlflow window in chars (default is 10)|
-| `g:vim_mlflow_expts_length`      | Number of expts to show in list (default is 8)|
-| `g:vim_mlflow_runs_length`       | Number of runs to show in list (default is 8)|
-| `g:vim_mlflow_viewtype`          | Show 1:activeonly, 2:deletedonly, or 3:all expts and runs (default is 1)|
-| `g:vim_mlflow_show_scrollicons`  | Show the little up/down scroll arrows on expt/run lists, 1 or 0 (default is 1, ie yes show them)|
-| `g:vim_mlflow_icon_useunicode`   | Allow unicode vs just ascii chars in UI, 1 or 0 (default is 0, ascii)|
-| `g:vim_mlflow_icon_vdivider`     | Default is `'─'` if `vim_mlflow_icon_useunicode` else `'-'`|
-| `g:vim_mlflow_icon_scrollstop`   | Default is `'▰'` if `vim_mlflow_icon_useunicode` else `''`|
-| `g:vim_mlflow_icon_scrollup`     | Default is `'▲'` if `vim_mlflow_icon_useunicode` else `'^'`|
-| `g:vim_mlflow_icon_scrolldown`   | Default is `'▼'` if `vim_mlflow_icon_useunicode` else `'v'`|
-| `g:vim_mlflow_icon_markrun`      | Default is `'▶'` if `vim_mlflow_icon_useunicode` else `'>'`|
-| `g:vim_mlflow_icon_hdivider`     | Default is `'│'` if `vim_mlflow_icon_useunicode` else `'|'`|
-| `g:vim_mlflow_icon_plotpts`      | Default is `'●'` if `vim_mlflow_icon_useunicode` else `'*'`|
-| `g:vim_mlflow_icon_between_plotpts` | Default is `'•'` if `vim_mlflow_icon_useunicode` else `'.'`|
-| `g:vim_mlflow_color_titles`      | Element highlight color label (default is `'Statement'`)|
-| `g:vim_mlflow_color_divlines`    | Element highlight color label (default is `'vimParenSep'`)|
-| `g:vim_mlflow_color_scrollicons `| Element highlight color label (default is `'vimParenSep'`)|
-| `g:vim_mlflow_color_selectedexpt`| Element highlight color label (default is `'String'`)|
-| `g:vim_mlflow_color_selectedrun` | Element highlight color label (default is `'Number'`)|
-| `g:vim_mlflow_color_help`        | Element highlight color label (default is `'Comment'`)|
-| `g:vim_mlflow_color_markrun`     | Element highlight color label (default is `'vimParenSep'`)|
-| `g:vim_mlflow_color_hiddencol`   | Element highlight color label (default is `'Comment'`)|
-| `g:vim_mlflow_color_plot_title`  | Highlight group for plot titles (default `'Statement'`)|
-| `g:vim_mlflow_color_plot_axes`   | Highlight group for plot axes text (default `'vimParenSep'`)|
-| `g:vim_mlflow_color_plotpts`     | Highlight group for plot point glyphs (default `'Constant'`)|
-| `g:vim_mlflow_color_between_plotpts` | Highlight group for line segments between points (default `'Comment'`)|
-| `g:vim_mlflow_plot_height`       | ASCII plot height in rows when graphing metric history (default `25`)|
-| `g:vim_mlflow_plot_width`        | ASCII plot width in columns (default `70`)|
-| `g:vim_mlflow_plot_xaxis`        | `'step'` or `'timestamp'` for metric plot x-axis (default `'step'`)|
-| `g:vim_mlflow_plot_reuse_buffer` | If `1`, reuse a single `__MLflowMetricPlot__` buffer; if `0`, create sequential plot buffers (default `1`)|
-| `g:vim_mlflow_artifacts_max_depth` | Maximum artifact directory depth shown when expanding folders (default `3`)|
+By default Vim-mlflow uses standard color groups like "Comment" and "Statement"
+to color its components so that whatever your colorscheme is it should "just
+work" in vim-mlflow.  (E.g. the animated GIF above used
+[PaperColor](https://github.com/vim-scripts/PaperColor.vim) colorscheme;
+see also its [dark-mode equivalent animated GIF](doc/demo_1.0.0_dark.gif)).
+But all details can be changed, per listing below.
+With no configuration parameters set, ascii characters with no color are used.
+
+See the [full listing of vim-mlflow config variables](doc/configuration_params.md)
+that may be of interest to set in your resource file.
 
 
 ## Troubleshooting
-- The sidebar can be slow on high-latency connections to MLflow, because as
-  currently implemented, each refresh spins up a short-lived Python process and
-  re-queries MLflow anew.  Running Vim close to the tracking server seems to
-  work fine (e.g. on same machine, and fine even if the database MLflow is
-  using is in AWS RDS while MLflow is in a tiny EC2 instance).  For slower
-  connections, increasing `g:vim_mlflow_timeout` might help avoid access
-  timeouts.  If there's demand, a future plugin version could keep a persistent
-  python process that keeps state in memory and requeries the database much
-  less often, but this hasn't seemed to be of much concern so far.
+- The sidebar may be slow on high-latency MLflow connections because each
+  refresh starts a short-lived Python process and re-queries MLflow.
+  Performance is fine when Vim runs close to the tracking server. On slower
+  links, increasing `g:vim_mlflow_timeout` may help. A future version could use
+  a persistent Python process to reduce queries, but so far this has not been
+  a common concern.
 - Unicode icons require a font that includes box-drawing characters.  Set
   `g:vim_mlflow_icon_useunicode = 0` if glyphs look broken as the simple quick
   fix, and also note there are config vars to change individual icon characters.
-- Can I view non‑text artifacts? – Text files (`*.txt`, `*.json`, `*.yaml`,
-  `MLmodel`) open directly in the plugin.  Binary artifacts' filenames are
-  shown but cannot be opened in terminal.
-- In classic Vim if the plugin fails to load, check that your Vim version
-  supports python (`vim --version`).  Also double-check that `mlflow` is
-  importable from the Python environment embedded in Vim (`:py3 import mlflow`
-  should succeed).  In Nvim if the plugin fails to load, double-check that
-  you installed `pynvim` in your python environment in addition to `mlflow`.
+- Text artifacts (`*.txt`, `*.json`, `*.yaml`, `MLmodel`) open directly in the
+  plugin.  Binary artifacts are listed but cannot be opened in the plugin.
+- If the plugin fails to load in classic Vim, verify that Vim supports Python
+  (vim --version) and that mlflow is importable in Vim’s Python environment
+  (:py3 import mlflow). In Neovim, also ensure pynvim is installed.
 - In NVim if the layout seems screwy, check step 5 above in Installation
   regarding `nowrap`.
-- In NVim I've found there's a quirk relevant to this plugin that's not
-  in classic Vim, which is that line wrapping is turned on by default, messing
-  up the layout of displayed tables in this plugin (whereas that's off by
-  default in classic).  The quick and easy way I handle this in NVim is adding
-  this line to resource file: `setlocal nowrap` - just note that'll apply to all
-  your buffers.  If that setting is a problem for you, note that depending how
-  long your MLflow run names are, you might not even notice this issue until
-  you open the __MLflowRuns__ window (via `R`), which displays many columns of
-  metrics and tags and parameters.
-
+- Neovim enables line wrapping by default, which can break table layouts in
+  this plugin. Adding `setlocal nowrap` fixes this globally. The issue is most
+  noticeable in the MLflowRuns window (opened with R), which displays many
+  columns.
 
 
 ## Legacy/older versions
@@ -242,16 +190,12 @@ Full list of vim-mlflow config variables that may be of interest to set in .vimr
 ## Related repos by aganse
 Vim-mlflow is part of a group of tools that you might find useful together (but
 all are separate tools that can be used independently):
-
 * [aganse/docker_mlflow_db](https://github.com/aganse/docker_mlflow_db):
     ready-to-run MLflow server with PostgreSQL, AWS S3, Nginx
-
 * [aganse/py_torch_gpu_dock_mlflow](https://github.com/aganse/py_torch_gpu_dock_mlflow):
     ready-to-run Python/PyTorch/MLflow-Projects setup to train models on GPU
-
 * [aganse/py_tf2_gpu_dock_mlflow](https://github.com/aganse/py_tf2_gpu_dock_mlflow):
     ready-to-run Python/Tensorflow2/MLflow-Projects setup to train models on GPU
-
 * [aganse/vim_mlflow](https://github.com/aganse/vim-mlflow):
     a Vim plugin to browse the MLflow parameters and metrics instead of GUI
 
