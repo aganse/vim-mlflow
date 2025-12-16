@@ -1,0 +1,185 @@
+*vim-mlflow.txt*	For Vim version 8.2+ and Neovim v0.11.5+	Last change: 2025 Dec 16
+
+				*vim-mlflow*
+vim-mlflow is a Vim/Neovim plugin for browsing MLflow experiments, runs,
+metrics, parameters, tags, and artifacts without leaving your editor.  It
+provides a sidebar for navigation and an optional comparison window for marked
+runs.
+
+==============================================================================
+CONTENTS					*vim-mlflow-contents*
+
+1.  Overview					|vim-mlflow-overview|
+2.  Requirements & install			|vim-mlflow-install|
+3.  Getting started				|vim-mlflow-start|
+4.  Windows & navigation			|vim-mlflow-windows|
+5.  Key mappings				|vim-mlflow-mappings|
+6.  Configuration				|vim-mlflow-config|
+7.  Troubleshooting & tips			|vim-mlflow-troubleshooting|
+8.  Further reading				|vim-mlflow-links|
+
+==============================================================================
+1. Overview						 *vim-mlflow-overview*
+
+vim-mlflow surfaces MLflow tracking data directly inside Vim.  The plugin:
+  - Lists experiments and runs in a dedicated sidebar buffer (`__MLflow__`).
+  - Shows run details (parameters, metrics, tags, artifacts) inline.
+  - Plots metric histories as ASCII graphs inside Vim splits.
+  - Opens a secondary window (`__MLflowRuns__`) to compare multiple runs.
+
+The project focuses on correctness and low maintenance overhead.  Features that
+require extensive configuration or background services are intentionally kept
+limited.
+
+==============================================================================
+2. Requirements & install				 *vim-mlflow-install*
+
+vim-mlflow needs a Python-enabled Vim or Neovim and the MLflow Python package.
+
+Minimum supported versions
+  - Vim 8.2 compiled with `+python3`
+  - Neovim v0.11.5 with the `pynvim` package installed
+
+Python environment
+  1. Create or activate a virtual environment (recommended):
+	`python3 -m venv .venv && source .venv/bin/activate`
+  2. Install MLflow (and pynvim for Neovim users):
+	`pip install mlflow`
+	`pip install pynvim`
+
+Plugin install
+  - Plugin managers: `Plugin 'aganse/vim-mlflow'`
+  - Manual runtimepath example (Neovim): `set runtimepath+=/path/to/vim-mlflow`
+
+After installation, restart Vim so the plugin is sourced.
+
+==============================================================================
+3. Getting started						*vim-mlflow-start*
+
+Basic setup in your `vimrc`/`init.vim`:
+>
+	let g:mlflow_tracking_uri = 'http://localhost:5000'
+	let g:vim_mlflow_width = 70
+<
+Launch the UI with either the default mapping or a command:
+  - Default mapping: `<Leader>m` (typically `\m`)
+  - Command form: `:call RunMLflow()`
+
+Make sure your Vim session runs inside a Python environment where `mlflow` (and
+`pynvim`, if needed) is installed; otherwise the plugin cannot connect.
+
+==============================================================================
+4. Windows & navigation					*vim-mlflow-windows*
+
+Sidebar (`__MLflow__`)
+  - Lists experiments, runs, and run details.
+  - Sections for parameters, metrics, tags, and artifacts can be toggled.
+  - Uses scroll hints and highlighting to show the active experiment/run.
+
+Runs window (`__MLflowRuns__`)
+  - Optional comparison buffer opened with `R` inside the sidebar.
+  - Displays a tabular view of marked runs, including tags/params/metrics based
+    on the toggles you choose.
+
+Metric plots
+  - Press `o` or `<Enter>` on metrics marked with `[final value; o to plot]` to
+    open an ASCII graph in a vertical split.  Plots reuse a dedicated buffer by
+    default but can be configured to open new windows for each metric.
+
+Artifacts
+  - Expand directories and open supported artifacts (text, JSON, YAML, MLmodel)
+    directly inside Vim.  Binary artifacts are listed but stay unopened.
+
+==============================================================================
+5. Key mappings						*vim-mlflow-mappings*
+
+Default mappings in the sidebar buffer (`__MLflow__`):
+
+  `?`		Toggle the inline help banner.
+  `<Enter>`	Open the experiment/run/section under the cursor.
+  `o`		Same as `<Enter>`; also plots metrics where available.
+  `<Space>`	Mark or unmark the highlighted run (visible in the runs window).
+  `r`		Refresh the sidebar and reset expanded artifacts.
+  `R`		Open or refresh the marked runs window (`__MLflowRuns__`).
+  `<C-p>`	Toggle the Parameters section visibility.
+  `<C-e>`	Toggle the Metrics section visibility.
+  `<C-t>`	Toggle the Tags section visibility.
+  `<C-a>`	Toggle the Artifacts section visibility.
+  `@`		Rotate the order of detail sections (params/metrics/tags/artifacts).
+  `A`		Cycle Active → Deleted → All experiments/runs (MLflow view type).
+  `n` / `p`	Scroll the experiment or run list down / up.
+  `N` / `P`	Jump to the bottom / top of the current list.
+
+Default mappings in the runs window (`__MLflowRuns__`):
+
+  `?`		Toggle the window-specific help banner.
+  `R`		Refresh the listing of marked runs.
+  `.`		Collapse or expand the column under the cursor.
+  `x`		Remove the run under the cursor from the marked list.
+  `<C-u>`	Undo all column layout tweaks (collapse/hide/move).
+  `<C-p>`	Include or omit run parameters in the table.
+  `<C-e>`	Include or omit run metrics in the table.
+  `<C-t>`	Include or omit run tags in the table.
+
+All mappings are buffer-local; redefining them globally is unnecessary.  You can
+remap the entry point by adjusting your own `<Leader>` mapping or calling
+`RunMLflow()` explicitly.
+
+==============================================================================
+6. Configuration						*vim-mlflow-config*
+
+Only `g:mlflow_tracking_uri` is required.  Common options:
+
+  `g:vim_mlflow_width`		Sidebar width in columns (default 70).
+  `g:vim_mlflow_height`		Runs window height in rows (default 10).
+  `g:vim_mlflow_expts_length`	Number of experiments displayed at once (default 8).
+  `g:vim_mlflow_runs_length`	Number of runs displayed at once (default 8).
+  `g:vim_mlflow_icon_useunicode`	Use Unicode box-drawing/icons (default 0 for ASCII).
+  `g:vim_mlflow_plot_width` / `g:vim_mlflow_plot_height`
+				Dimensions of metric plots (default 70x25).
+  `g:vim_mlflow_plot_reuse_buffer`	Reuse a single plot buffer (default 1).
+  `g:vim_mlflow_section_order`	List order for run details (default
+				`['params', 'metrics', 'tags', 'artifacts']`).
+  `g:vim_mlflow_timeout`	HTTP timeout (seconds) when probing the tracking URI
+				before querying MLflow (default 0.5).
+
+See `doc/configuration_params.md` in the repository for a complete table of
+settings, including highlight groups and custom icon characters.
+
+==============================================================================
+7. Troubleshooting & tips			*vim-mlflow-troubleshooting*
+
+Slow refreshes~
+  Each refresh queries MLflow synchronously.  Performance is best when Vim runs
+  close to the tracking server.  Increase `g:vim_mlflow_timeout` if connections
+  are flaky.  Long round-trips may still block Vim temporarily.
+
+Unicode glyph issues~
+  Set `let g:vim_mlflow_icon_useunicode = 0` to fall back to ASCII characters if
+  your terminal font lacks box-drawing support.  Individual icons can also be
+  overridden in your config.
+
+Plugin does not load~
+  - Confirm Vim reports `+python3` (`vim --version | grep +python3`).
+  - In Neovim ensure `pynvim` is installed in the same environment.
+  - From Vim run `:py3 import mlflow` to verify MLflow is importable.
+
+Neovim layout wrapping~
+  Neovim enables line wrapping by default.  Add `setlocal nowrap` in your config
+  if columns in vim-mlflow buffers appear misaligned.
+
+Artifacts~
+  Text artifacts (`*.txt`, `*.json`, `*.yaml`, `MLmodel`) open directly.  Binary
+  artifacts are listed but not opened.
+
+==============================================================================
+8. Further reading						*vim-mlflow-links*
+
+Primary documentation (repository):
+  - Project README for animated demos and deeper background.
+  - `doc/configuration_params.md` for the full configuration reference.
+  - CONTRIBUTING.md for contribution guidelines and support expectations.
+
+==============================================================================
+
+vim:tw=78:ts=8:ft=help:norl:
