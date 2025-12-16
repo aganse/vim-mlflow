@@ -24,34 +24,8 @@ steps).
 * At minimum set `let g:mlflow_tracking_uri = "http://<mlflow_trk_svr_host>:<port>"`
   in your resource file to your MLflow tracking server.  Other options listed below.
 * Press `\m` (leader-key and `m`) to start the plugin, and press `?` in there to
-  check the help listing for other keys.
-
-Of course you can RTFM below for details on Features, Installation, Usage,
-Configuration, Troubleshooting, Legacy/older versions, Related repos by aganse,
-Making the animated screen-shot gif, and Acknowledgements. :wink:
-
-
-## Feature Summary
-In `vim-mlflow` you can:
-* Press `\m` to start vim-mlflow (default setting, ie leader-key and `m`).
-* Open a sidebar (`__MLflow__`) that lists all experiments on the connected
-  MLflow server.
-* Expand experiments to see individual runs.
-* Drill into runs to view metrics, parameters, tags, and artifacts.
-* Open a run comparison pane (`__MLflowRuns__`) to compare metrics
-  across multiple selected runs in multiple experiments.
-* View ASCII plots of metric histories, and text artifacts inline.
-* Completely configure vim-mlflow via Vim variables (e.g. in your resource file).
-
-> [!IMPORTANT]
-> `vim‑mlflow` requires a Python3‑enabled version of classic Vim (or Python
-> package `pynvim` installed for NVim) and the `mlflow` Python package installed
-> in the same environment that Vim/NVim is launched from.  You'll also want to
-> make sure that the version of Python3 with which you created your Python
-> environment matches the version of Python3 in your vim installation (e.g. in
-> classic Vim you can check this in vim with `:py3 import sys; print(sys.version)`).
-> If you just use the latest version of everything you probably won't have any
-> issue here.
+  check the help listing for other keys.  Navigate with the standard vim movement
+  keys, and "open" various items via `o` or `<enter>`.
 
 
 ## Installation
@@ -99,29 +73,20 @@ In `vim-mlflow` you can:
 
 
 ## Usage
-Ensure you're in your python environment with MLflow before starting Vim.
-Then start the plugin using `<leader>m` or `:call RunMLflow()` (e.g. on my
-system the `<leader>` key is `\` so I do `\m`).
-You can also update that mapping in your ~/.vimrc file to set a new leader/key
-to start vim-mlflow in your Vim session, for example
-`nnoremap <leader>m :call RunMLflow()<CR>`.
-
-Starting the plugin opens the `__MLflow__` sidebar.  Navigate the cursor around
-with the standard vim movement keys.  A few of the more important plugin-specific
-key bindings inside the sidebar are:
-
-| Key | Action |
-|-----|--------|
-| `o`, `<enter>` | Open experiment/run/plot/artifact/section under cursor |
-| `r` | Requery the MLflow display |
-| `<space>` | Mark runs in the runs list |
-| `R` | Open the `__MLflowRuns__` window to show and compare more details for the marked runs |
-
-Pressing `o` or `<enter>` while your cursor is on an experiment will open that
-experiment, updating the Runs list.  Pressing it on a run will open that run and
-update the Metrics, Parameters, Tags, and Artifacts shown from the run.  Pressing
-it on a metric with a history will open an ASCII plot of that metric's time
-series.  Press `?` in the sidebar for a full help listing of the keys map.
+* Ensure you're in your python environment with MLflow before starting Vim.
+* Press `\m` to start vim-mlflow (default setting, ie leader-key and m. or can
+  use `:call RunMLflow()`).  You can update that leader/key mapping via
+  `nnoremap <leader>m :call RunMLflow()<CR>`.
+* Vim-mlflow opens a sidebar (__MLflow__) that lists all experiments on the
+  connected MLflow server.
+* Navigate the cursor around with the standard vim movement keys, and "open"
+  various items via `o` or `<enter>` key.
+* Select experiments to their respective lists of runs.
+* Drill into runs to view metrics, parameters, tags, and artifacts.
+* View ASCII plots of metric histories, and text artifacts inline.
+* Open a run comparison pane (__MLflowRuns__) to compare metrics across
+  multiple selected runs in multiple experiments.
+* Press `?` in the sidebar for a full help listing of the keys map.
 
 
 ## Configuration
