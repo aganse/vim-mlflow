@@ -1,3 +1,0 @@
-Make graceful handling for when no VIRTUAL_ENV exists (currently barfs on vim startup).
-Reduce frequency of accessing the MLflow API (database) and store results more in memory to speed up UI.
-Resolve remaining intermittant bugs in MLflowRuns pane column hiding.

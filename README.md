@@ -35,7 +35,7 @@ steps).
   must install a Vim build compiled with Python3.)
 - In NVim you're good to go as long as you install pynvim in your python env
   down in #3.
-- Tested successfully on Vim 8.2+ and NVim v0.11.5.
+- Tested successfully on Vim 8.2+ and NVim v0.11.5, with Python3.10+.
 
 #### 2. Highly recommended to create/use a python virtual environment:
 - `python3 -m venv .venv`
@@ -110,10 +110,11 @@ that may be of interest to set in your resource file.
 ## Troubleshooting
 - The sidebar may be slow on high-latency MLflow connections because each
   refresh starts a short-lived Python process and re-queries MLflow.
-  Performance is fine when Vim runs close to the tracking server. On slower
-  links, increasing `g:vim_mlflow_timeout` may help. A future version could use
-  a persistent Python process to reduce queries, but so far this has not been
-  a common concern.
+  Performance seems fine when Vim runs close to the tracking server; running
+  all components in AWS within same region, it has worked well for our team.
+  On slower links, increasing `g:vim_mlflow_timeout` may help.  A future version
+  could use a persistent Python process to reduce queries if necessary, but so
+  far this has not been a common enough concern.
 - Unicode icons require a font that includes box-drawing characters.  Set
   `g:vim_mlflow_icon_useunicode = 0` if glyphs look broken as the simple quick
   fix, and also note there are config vars to change individual icon characters.
@@ -131,43 +132,42 @@ that may be of interest to set in your resource file.
 
 
 ## Contributing
-Contributions are welcome, but note this project is maintained on a best-effort
-basis by single maintainer Andy Ganse, and focused on long-term maintainability
-more than rapid feature growth.  Bug fixes, documentation improvements, and
-small, well-scoped enhancements are the most likely to be accepted.  Feature
-requests may be declined if they significantly increase complexity, maintenance
-burden, or diverge from the project’s stated scope.  Please read
-[CONTRIBUTING.md](CONTRIBUTING.md) before opening issues or pull requests, and
-note that response and review times may be slow.
+Contributions are welcome; just note this project is maintained on a best-effort
+basis by a single maintainer (Andy Ganse) alongside other commitments, and so
+focused on long-term maintainability more than rapid feature growth.  Bug fixes,
+documentation improvements, and small, well-scoped enhancements are the most
+likely to be accepted.  Feature requests may be declined if they significantly
+increase complexity, maintenance burden, or diverge from the project’s stated
+scope.  Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening issues or
+pull requests, and note that response and review times may not be fast.
 
 
 ## Legacy/older versions
-   Legacy/older versions of this plugin can be accessed by git checking out an
-   earlier version locally, and then referencing it in your .vimrc (for classic
-   Vim like `Plugin 'file:///my/path/to/python/vim-mlflow'`.
-   Or similarly you can set that path in your runtimepath in NVim (without the
-   `file://`).
-   That said, it's recommended to use >= v1.0.0 - that's the first "official"
-   release (I'll just keep adding to this table as more releases come out).
+Legacy/older versions of this plugin can be accessed by git checking out an
+earlier version locally, and then referencing it in your .vimrc (for classic
+Vim like `Plugin 'file:///my/path/to/python/vim-mlflow'`.
+Or similarly you can set that path in your runtimepath in NVim (without the
+`file://`).
+That said, it's recommended to use >= v1.0.0 - that's the first "official"
+release (we'll just keep adding to this table as more releases come out).
 
-   |  vim-mlflow git tag  | tested with mlflow version | tested with vim version |
-   | ---------------------| -------------------------- | ----------------------- |
-   | v0.8                 |  1.26.1                    | vim 8.2                 |
-   | v0.9                 |  1.30.0, 2.7.1             | vim 8.2                 |
-   | v1.0.0 (this version)|  2.12.0, 2.19.0, 3.6.0     | vim 9.1, nvim v0.11.5   |
+|  vim-mlflow git tag  | tested with mlflow version | tested with vim version |
+| ---------------------| -------------------------- | ----------------------- |
+| v0.8                 |  1.26.1                    | vim 8.2                 |
+| v0.9                 |  1.30.0, 2.7.1             | vim 8.2                 |
+| v1.0.0 (this version)|  2.12.0, 2.19.0, 3.6.0     | vim 9.1, nvim v0.11.5   |
 
 
 ## Related repos by aganse
 Vim-mlflow is part of a group of tools that you might find useful together (but
-all are separate tools that can be used independently):
+all are separate tools that can be used independently).  In particular the
+following two tools allow to populate test contents into a temporary MLflow
+tracking server for dev/test purposes - they're the contents seen in screencast
+above:
 * [aganse/docker_mlflow_db](https://github.com/aganse/docker_mlflow_db):
     ready-to-run MLflow server with PostgreSQL, AWS S3, Nginx
 * [aganse/py_torch_gpu_dock_mlflow](https://github.com/aganse/py_torch_gpu_dock_mlflow):
     ready-to-run Python/PyTorch/MLflow-Projects setup to train models on GPU
-* [aganse/py_tf2_gpu_dock_mlflow](https://github.com/aganse/py_tf2_gpu_dock_mlflow):
-    ready-to-run Python/Tensorflow2/MLflow-Projects setup to train models on GPU
-* [aganse/vim_mlflow](https://github.com/aganse/vim-mlflow):
-a Vim plugin to browse the MLflow parameters and metrics instead of GUI
 
 
 ## Making the animated screen-shot gif
@@ -181,17 +181,11 @@ a Vim plugin to browse the MLflow parameters and metrics instead of GUI
 
 ## Acknowledgements
 With many thanks to:
-* The Writing Vim plugin in Python article by Timur Rubeko, 2017 Aug 11, at
+* "Writing a Vim plugin in Python" article by Timur Rubeko, 2017 Aug 11, at
   http://candidtim.github.io/vim/2017/08/11/write-vim-plugin-in-python.html
-* Analyzing Your MLflow Data with DataFrames by Max Allen, 2019 Oct 3, at
-  https://slacker.ro/2019/10/03/analyzing-your-mlflow-data-with-dataframes
+* "Analyzing Your MLflow Data with DataFrames" by Max Allen, 2019 Oct 3, at
+  https://www.databricks.com/blog/2019/10/03/analyzing-your-mlflow-data-with-dataframes.html
 * The Python Interface to Vim, 2019 Dec 07, at
   https://vimhelp.org/if_pyth.txt.html#python-vim
-* Alternative to execfile in Python 3, Stack Overflow, 2011 Jun 15 at
-  https://stackoverflow.com/questions/6357361/alternative-to-execfile-in-python-3/6357418#6357418
 * MLFlow Python API at
   https://www.mlflow.org/docs/latest/python_api/mlflow.html
-* MLFlow REST API at
-  https://www.mlflow.org/docs/latest/rest-api.html
-* MLFlow Projects page at
-  https://www.mlflow.org/docs/latest/projects.html
