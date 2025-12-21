@@ -1,5 +1,5 @@
 # vim-mlflow
-![version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+[![version](https://img.shields.io/badge/dynamic/txt?color=blue&label=version&query=%24&url=https%3A%2F%2Fraw.githubusercontent.com%2Faganse%2Fvim-mlflow%2Fmain%2FVERSION)](https://github.com/aganse/vim-mlflow/blob/main/VERSION)
 [![licence](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/aganse/vim-mlflow/LICENSE)
 [![unittests-python](https://github.com/aganse/vim-mlflow/workflows/unittests-python/badge.svg)](https://github.com/aganse/vim-mlflow/actions/workflows/unittests-python.yml)
 [![unittests-vimscript](https://github.com/aganse/vim-mlflow/workflows/unittests-vimscript/badge.svg)](https://github.com/aganse/vim-mlflow/actions/workflows/unittests-vim.yml)
