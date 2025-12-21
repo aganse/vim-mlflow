@@ -111,18 +111,6 @@ With no configuration parameters set, ascii characters with no color are used.
 See the [full listing of vim-mlflow config variables](doc/configuration_params.md)
 that may be of interest to set in your resource file.
 
-## Unittests and codestyle checks
-Ensure you have activated the project’s Python environment (e.g. `source
-.venv/bin/activate`) so that `mlflow`, `pynvim`, and the dev tools (`pytest`,
-`flake8`, `vim-vint`) are importable.  The `Makefile` mirrors what CI runs and
-is the easiest way to exercise the suite locally:
-- `make env` installs runtime and dev dependencies listed in `requirements.txt`.
-  (Be sure you're in your python environment first!)
-- `make unittests` runs Vimscript unittests in both Vim and Neovim, and also
-  the Python unittests.
-- `make codestyle` lints both the Vimscript in `plugin/` (with `vint`) and the
-  Python in `python/` (with `flake8`).
-
 
 ## Troubleshooting
 - The sidebar may be slow on high-latency MLflow connections because each
@@ -157,6 +145,19 @@ likely to be accepted.  Feature requests may be declined if they significantly
 increase complexity, maintenance burden, or diverge from the project’s stated
 scope.  Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening issues or
 pull requests, and note that response and review times may not be fast.
+
+### Dev tools to be aware of when contributing
+This repo has unittests and codestyle checks, implemented in both CI workflows
+and also available locally via the following Makefile calls.  To run these you
+need a few more packages in your Python environment than when just using the
+plugin as above.  So for dev purposes after entering your Python environment 
+(e.g. `source .venv/bin/activate`) run `make dev-env` which will install the
+list of packages in dev-requirements.txt.  Then you can run the following to
+confirm they pass before submitting a PR for review:
+- `make unittests` runs Vimscript unittests in both Vim and Neovim, and also
+  the Python unittests.
+- `make codestyle` lints both the Vimscript in `plugin/` (with `vint`) and the
+  Python in `python/` (with `flake8`).
 
 
 ## Legacy/older versions

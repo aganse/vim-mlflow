@@ -42,6 +42,10 @@ Vim-specific contribution requirements:
   corresponding documentation updates.  Preserving existing workflows is
   strongly preferred.
 
+In addition to unittests and codestyle workflows passing, contributors are
+expected to thoroughly test their updates end-to-end themselves within vim/nvim
+before submitting a PR.
+
 
 ## Issues
 

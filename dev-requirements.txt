@@ -3,3 +3,4 @@ pynvim
 pytest
 flake8
 vim-vint
+setuptools

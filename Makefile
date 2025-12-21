@@ -1,7 +1,7 @@
 .PHONY: codestyle-python-flake8 codestyle-vimscript-vint unittests unittests-vim unittests-vim-vim unittests-vim-nvim unittests-python env
 
-env:
-	@python3 -m pip install -r requirements.txt
+dev-env:
+	@python3 -m pip install -r dev-requirements.txt
 
 codestyle: codestyle-vimscript-vint codestyle-python-flake8
 
