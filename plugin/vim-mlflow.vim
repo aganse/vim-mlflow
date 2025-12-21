@@ -1,8 +1,15 @@
 scriptencoding utf-8
 
-let g:vim_mlflow_version = get(g:, 'vim_mlflow_version', '1.0.0')
-
 let s:plugin_root_dir = fnamemodify(resolve(expand('<sfile>:p')), ':h')
+let s:version_path = fnameescape(fnamemodify(s:plugin_root_dir . '/../VERSION', ':p'))
+if filereadable(s:version_path)
+    let s:raw_version = readfile(s:version_path)
+    let s:file_version = empty(s:raw_version) ? 'dev' : trim(s:raw_version[0])
+else
+    let s:file_version = 'dev'
+endif
+let g:vim_mlflow_version = get(g:, 'vim_mlflow_version', s:file_version)
+
 let s:num_expts = 0
 let s:num_runs = 0
 if !get(g:, 'vim_mlflow_skip_python_check', 0) && !has('python3')
