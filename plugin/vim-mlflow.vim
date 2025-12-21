@@ -1,6 +1,10 @@
+scriptencoding utf-8
+
 let g:vim_mlflow_version = get(g:, 'vim_mlflow_version', '1.0.0')
 
 let s:plugin_root_dir = fnamemodify(resolve(expand('<sfile>:p')), ':h')
+let s:num_expts = 0
+let s:num_runs = 0
 if !get(g:, 'vim_mlflow_skip_python_check', 0) && !has('python3')
     echo 'Error: vim must be compiled with +python3 to run the vim-mlflow plugin.'
     finish
@@ -65,10 +69,10 @@ function! SetDefaults()
     let g:vim_mlflow_artifact_expanded = get(g:, 'vim_mlflow_artifact_expanded', {})
     let g:vim_mlflow_artifacts_max_depth = get(g:, 'vim_mlflow_artifacts_max_depth', 3)
     let g:vim_mlflow_section_order = get(g:, 'vim_mlflow_section_order', ['params', 'metrics', 'tags', 'artifacts'])
-    if type(g:vim_mlflow_section_order) != type([])
+    if type(g:vim_mlflow_section_order) !=# type([])
         let g:vim_mlflow_section_order = ['params', 'metrics', 'tags', 'artifacts']
     else
-        let g:vim_mlflow_section_order = filter(copy(g:vim_mlflow_section_order), {_, v -> index(['params', 'metrics', 'tags', 'artifacts'], v) != -1})
+        let g:vim_mlflow_section_order = filter(copy(g:vim_mlflow_section_order), {_, v -> index(['params', 'metrics', 'tags', 'artifacts'], v) !=# -1})
         if empty(g:vim_mlflow_section_order)
             let g:vim_mlflow_section_order = ['params', 'metrics', 'tags', 'artifacts']
         endif
@@ -135,17 +139,17 @@ function! s:ColorizePlotBuffer()
     call matchadd(g:vim_mlflow_color_plot_title, '\%1l.*')
     call matchadd(g:vim_mlflow_color_selectedexpt, '\%1l\zs#[0-9]\+\ze', 15)
     call matchadd(g:vim_mlflow_color_selectedrun, '\%1l\zs#[0-9a-zA-Z]\{5}\ze', 15)
-    if g:vim_mlflow_icon_hdivider != ''
+    if g:vim_mlflow_icon_hdivider !=# ''
         call matchadd(g:vim_mlflow_color_plot_axes, '\V' . g:vim_mlflow_icon_hdivider)
     endif
-    if g:vim_mlflow_icon_vdivider != ''
+    if g:vim_mlflow_icon_vdivider !=# ''
         call matchadd(g:vim_mlflow_color_plot_axes, '\V' . g:vim_mlflow_icon_vdivider)
     endif
     call matchadd(g:vim_mlflow_color_plot_axes, '\V+')
-    if g:vim_mlflow_icon_plotpts != ''
+    if g:vim_mlflow_icon_plotpts !=# ''
         call matchadd(g:vim_mlflow_color_plotpts, '\V' . g:vim_mlflow_icon_plotpts)
     endif
-    if g:vim_mlflow_icon_between_plotpts != ''
+    if g:vim_mlflow_icon_between_plotpts !=# ''
         call matchadd(g:vim_mlflow_color_between_plotpts, '\V' . g:vim_mlflow_icon_between_plotpts)
     endif
 endfunction
@@ -193,11 +197,11 @@ function! RunMLflow()
     " Set the defaults for all the user-specifiable options
     call SetDefaults()
   
-    if bufwinnr(g:vim_mlflow_buffername) == -1
+    if bufwinnr(g:vim_mlflow_buffername) ==# -1
         " Open a new split on specified side
-        if g:vim_mlflow_vside == 'left'
+        if g:vim_mlflow_vside ==# 'left'
             execute 'lefta vsplit ' . g:vim_mlflow_buffername
-        elseif g:vim_mlflow_vside == 'right'
+        elseif g:vim_mlflow_vside ==# 'right'
             execute 'rightb vsplit ' . g:vim_mlflow_buffername
         else
             echo 'unrecognized value for g:vim_mlflow_vside = ' . g:vim_mlflow_vside
@@ -239,11 +243,11 @@ endfunction
 
 function! OpenRunsWindow()
   
-    if bufwinnr(g:vim_mlflow_runs_buffername) == -1
+    if bufwinnr(g:vim_mlflow_runs_buffername) ==# -1
         " Open a new split on specified side
-        if g:vim_mlflow_hside == 'below'
+        if g:vim_mlflow_hside ==# 'below'
             execute 'botright split ' . g:vim_mlflow_runs_buffername
-        elseif g:vim_mlflow_hside == 'above'
+        elseif g:vim_mlflow_hside ==# 'above'
             execute 'topleft split ' . g:vim_mlflow_runs_buffername
         else
             echo 'unrecognized value for g:vim_mlflow_hside = ' . g:vim_mlflow_hside
@@ -285,14 +289,14 @@ function! RemoveMarkedRunViaCurpos()
     " Maybe some issue with vim 'magic'; if () could work then substitute is unnecesary.
     let l:run = substitute(matchstr(l:currentLine, '\m\#[0-9a-fA-F]\{5\} '), '[\# ]', '', 'g')
   
-    if l:run != ''
+    if l:run !=# ''
         let s:markruns_list = filter(s:markruns_list, 'v:val[:5] !~ "'.l:run[:5].'"')
     endif
     call RefreshRunsBuffer()
     " Also refresh the main pane so marks disappear there too.
     let l:current_win = win_getid()
     let l:mlflow_winnr = bufwinnr(g:vim_mlflow_buffername)
-    if l:mlflow_winnr != -1
+    if l:mlflow_winnr !=# -1
         execute l:mlflow_winnr . 'wincmd w'
         call RefreshMLflowBuffer(0)
         call win_gotoid(l:current_win)
@@ -309,13 +313,13 @@ function! AssignExptRunFromCurpos(curpos)
     let l:expt = substitute(matchstr(l:currentLine, '\m\#[0-9]\{1,4\}\:'), '[\#\:]', '', 'g')
     let l:run = substitute(matchstr(l:currentLine, '\m\#[0-9a-fA-F]\{5\}\:'), '[\#\:]', '', 'g')
   
-    if l:expt != ''
+    if l:expt !=# ''
         let s:current_exptid = l:expt
         let s:current_runid = ''
         let s:runs_first_idx = 0
         let g:vim_mlflow_artifact_expanded = {}
     endif
-    if l:run != ''
+    if l:run !=# ''
         let s:current_runid = l:run
         let g:vim_mlflow_artifact_expanded = {}
     endif
@@ -330,7 +334,7 @@ function! RefreshMLflowBuffer(doassign, ...)
     let l:reset_artifacts = 0
     " Allow callers to pass cursor position and/or reset flag via a:000.
     if len(a:000) >= 1
-        if type(a:000[0]) == type([])
+        if type(a:000[0]) ==# type([])
             let l:curpos = a:000[0]
             if len(a:000) >= 2
                 let l:reset_artifacts = a:000[1]
@@ -400,12 +404,12 @@ endfunction
 
 function! ColorizeRunsBuffer()
     call matchadd(g:vim_mlflow_color_titles, 'expt_id.*$')
-    if g:vim_mlflow_icon_vdivider != ''
+    if g:vim_mlflow_icon_vdivider !=# ''
         call matchadd(g:vim_mlflow_color_divlines, repeat(g:vim_mlflow_icon_vdivider, 4).'*')
     endif
     call matchadd(g:vim_mlflow_color_help, '^".*')
     call matchadd(g:vim_mlflow_color_hiddencol, ' : ')
-    if g:vim_mlflow_icon_vdivider != ''
+    if g:vim_mlflow_icon_vdivider !=# ''
         call matchadd(g:vim_mlflow_color_hiddencol, ' '.g:vim_mlflow_icon_vdivider.' ')
     endif
 endfunction
@@ -418,17 +422,17 @@ function! ColorizeMLflowBuffer()
     call matchadd(g:vim_mlflow_color_titles, 'Metrics in run .*:')
     call matchadd(g:vim_mlflow_color_titles, 'Artifacts in run .*:')
     call matchadd(g:vim_mlflow_color_titles, 'Tags in run .*:')
-    if g:vim_mlflow_icon_vdivider != ''
+    if g:vim_mlflow_icon_vdivider !=# ''
         call matchadd(g:vim_mlflow_color_divlines, repeat(g:vim_mlflow_icon_vdivider, 4).'*')
     endif
-    if g:vim_mlflow_icon_scrollstop != ''
+    if g:vim_mlflow_icon_scrollstop !=# ''
         call matchadd(g:vim_mlflow_color_scrollicons, '^'.g:vim_mlflow_icon_scrollstop)
     endif
     call matchadd(g:vim_mlflow_color_scrollicons, '^'.g:vim_mlflow_icon_scrollup)
     call matchadd(g:vim_mlflow_color_scrollicons, '^'.g:vim_mlflow_icon_scrolldown)
     call matchadd(g:vim_mlflow_color_help, '^".*')
     call matchadd(g:vim_mlflow_color_markrun, '^'.g:vim_mlflow_icon_markrun.'.*$')
-    if s:expt_hi != ''
+    if s:expt_hi !=# ''
         call matchdelete(s:expt_hi)
         call matchdelete(s:run_hi)
     endif
@@ -456,7 +460,7 @@ function! MarkRun()
      \     l:curpos[1]<=l:top_to_expts+s:actual_expts_length+l:expts_to_runs+s:actual_runs_length
         let l:currentLine = getline(l:curpos[1])
         let l:runid5 = substitute(matchstr(l:currentLine, '\m\#[0-9a-fA-F]\{5\}\:'), '[\#\:]', '', 'g')
-        if l:runid5 != ''
+        if l:runid5 !=# ''
             if index(s:markruns_list, l:runid5) >= 0  " If item is in the list.
                 call remove(s:markruns_list, index(s:markruns_list, l:runid5))
             else
@@ -564,7 +568,7 @@ function! HideColumn()
     let s:numreducedcols = len(l:hiddencols_le_colnum)
     let l:colnum = len(split(l:line, ' ')) - 1 + s:numreducedcols
 
-    if index(s:hiddencols_list, l:colnum) == -1
+    if index(s:hiddencols_list, l:colnum) ==# -1
         call add(s:hiddencols_list, str2nr(l:colnum))
     endif
     call RefreshRunsBuffer()
@@ -675,7 +679,7 @@ function! ListHelpMsg()
         normal! 1G
         let s:help_msg_is_showing = 1
     else
-        execute "normal! 1G". len(s:helptext) . "dd"
+        execute 'normal! 1G' . len(s:helptext) . 'dd'
         call append(line('^'), '" Press ? for help')
         call append(line('^'), l:title)
         let s:help_msg_is_showing = 0
@@ -709,7 +713,7 @@ function! RunsListHelpMsg()
         normal! 1G
         let s:runhelp_msg_is_showing = 1
     else
-        execute "normal! 1G". len(s:helptext) . "dd"
+        execute 'normal! 1G' . len(s:helptext) . 'dd'
         call append(line('^'), '" Press ? for help')
         call append(line('^'), 'Vim-MLflow Marked Runs')
         let s:runhelp_msg_is_showing = 0
@@ -832,13 +836,13 @@ function! HandleMetricPlotUnderCursor()
     let l:line = line('.')
     let l:curline = getline('.')
     let l:metric_lines = get(g:, 'vim_mlflow_metric_lines', [])
-    if type(l:metric_lines) != type([])
+    if type(l:metric_lines) !=# type([])
         let l:metric_lines = []
     endif
     if empty(l:metric_lines)
         return 0
     endif
-    if index(l:metric_lines, l:line) == -1
+    if index(l:metric_lines, l:line) ==# -1
         return 0
     endif
     if l:curline !~# '^\s\{2,}\S\+:'
@@ -849,30 +853,30 @@ function! HandleMetricPlotUnderCursor()
         return 0
     endif
     let l:metric = l:match[1]
-    if ! exists("s:current_runid") || s:current_runid == ""
-        echo "vim-mlflow: no run selected."
+    if ! exists('s:current_runid') || s:current_runid ==# ''
+        echo 'vim-mlflow: no run selected.'
         return 1
     endif
     let l:all_histories = get(g:, 'vim_mlflow_metric_histories', {})
-    if type(l:all_histories) != type({})
+    if type(l:all_histories) !=# type({})
         let l:all_histories = {}
     endif
     if ! has_key(l:all_histories, s:current_runid)
-        echo "vim-mlflow: metric history unavailable; try refreshing."
+        echo 'vim-mlflow: metric history unavailable; try refreshing.'
         return 1
     endif
     let l:histories = l:all_histories[s:current_runid]
     if ! has_key(l:histories, l:metric)
-        echo "vim-mlflow: metric history not found."
+        echo 'vim-mlflow: metric history not found.'
         return 1
     endif
     let l:history = l:histories[l:metric]
     if len(l:history) <= 1
-        echo "vim-mlflow: metric has no series to plot."
+        echo 'vim-mlflow: metric has no series to plot.'
         return 1
     endif
     if ! exists('*json_encode')
-        echo "vim-mlflow: json support is required for plotting."
+        echo 'vim-mlflow: json support is required for plotting.'
         return 1
     endif
     let l:history_json = json_encode(l:history)
@@ -939,12 +943,12 @@ vim.vars['vim_mlflow_plot_lines'] = lines
 vim.vars['vim_mlflow_plot_title'] = title
 EOF
     if ! exists('g:vim_mlflow_plot_lines')
-        echo "vim-mlflow: failed to generate plot."
+        echo 'vim-mlflow: failed to generate plot.'
         return 1
     endif
     let l:plot_lines = get(g:, 'vim_mlflow_plot_lines', [])
     if empty(l:plot_lines)
-        echo "vim-mlflow: no plot data available."
+        echo 'vim-mlflow: no plot data available.'
         return 1
     endif
     let l:plot_title = get(g:, 'vim_mlflow_plot_title', '')
@@ -963,7 +967,7 @@ function! MLflowActionUnderCursor()
     let l:line = line('.')
     let l:key = string(l:line)
     for l:entry in get(g:, 'vim_mlflow_section_headers', [])
-        if get(l:entry, 'line', -1) == l:line
+        if get(l:entry, 'line', -1) ==# l:line
             let l:section = get(l:entry, 'section', '')
             if !empty(l:section)
                 call ToggleSection(l:section)
@@ -979,7 +983,7 @@ function! MLflowActionUnderCursor()
             if l:info.openable
                 call OpenArtifactFile(l:info.path)
             else
-                echo "vim-mlflow: artifact not opened (unsupported type)."
+                echo 'vim-mlflow: artifact not opened (unsupported type).'
             endif
         endif
         return 1
@@ -1006,7 +1010,7 @@ endfunction
 
 
 function! RotateMLflowSections()
-    let l:order = filter(copy(g:vim_mlflow_section_order), {_, v -> index(['params', 'metrics', 'tags', 'artifacts'], v) != -1})
+    let l:order = filter(copy(g:vim_mlflow_section_order), {_, v -> index(['params', 'metrics', 'tags', 'artifacts'], v) !=# -1})
     if empty(l:order)
         let l:order = ['params', 'metrics', 'tags', 'artifacts']
     endif
@@ -1033,7 +1037,7 @@ endfunction
 
 
 function! ToggleSection(section)
-    if index(['params', 'metrics', 'tags', 'artifacts'], a:section) == -1
+    if index(['params', 'metrics', 'tags', 'artifacts'], a:section) ==# -1
         return
     endif
     call s:ToggleSectionInternal(a:section)
@@ -1064,7 +1068,7 @@ endfunction
 
 
 function! OpenArtifactFile(path)
-    if a:path == ''
+    if a:path ==# ''
         return
     endif
 python3 << EOF
@@ -1123,7 +1127,7 @@ except Exception as exc:
     vim.vars['vim_mlflow_artifact_error'] = str(exc)
 EOF
     if !exists('g:vim_mlflow_artifact_local')
-        echo "vim-mlflow: failed to download artifact."
+        echo 'vim-mlflow: failed to download artifact.'
         return
     endif
     let l:local = g:vim_mlflow_artifact_local
@@ -1142,7 +1146,7 @@ EOF
     if filereadable(l:local)
         call s:ShowArtifactBuffer(a:path, l:local)
     else
-        echo "vim-mlflow: artifact not readable."
+        echo 'vim-mlflow: artifact not readable.'
     endif
 endfunction
 
@@ -1151,9 +1155,9 @@ function! s:ShowArtifactBuffer(path, localpath)
     let l:current_win = win_getid()
     let l:bufname = 'artifact://' . a:path
     let l:winnr = bufwinnr(l:bufname)
-    if l:winnr == -1
+    if l:winnr ==# -1
         let l:scratch = s:FindScratchWindow()
-        if l:scratch != -1
+        if l:scratch !=# -1
             call win_gotoid(l:scratch)
             execute 'enew'
         else
@@ -1187,13 +1191,13 @@ endfunction
 
 function! s:SetBufferFiletype(path)
     let l:lower = tolower(a:path)
-    if l:lower =~ '\v\.json$'
+    if l:lower =~# '\v\.json$'
         setfiletype json
-    elseif l:lower =~ '\v\.(yaml|yml)$'
+    elseif l:lower =~# '\v\.(yaml|yml)$'
         setfiletype yaml
-    elseif l:lower =~ '\v\.txt$'
+    elseif l:lower =~# '\v\.txt$'
         setfiletype text
-    elseif l:lower =~ '\vmlmodel$'
+    elseif l:lower =~# '\vmlmodel$'
         setfiletype yaml
     else
         setfiletype text
@@ -1208,7 +1212,7 @@ function! s:FindScratchWindow()
             continue
         endif
         let l:name = bufname(l:buf)
-        if (empty(l:name) || l:name =~? '^artifact://') && getbufvar(l:buf, '&buftype') == ''
+        if (empty(l:name) || l:name =~? '^artifact://') && getbufvar(l:buf, '&buftype') ==# ''
             return win_getid(l:w)
         endif
     endfor
