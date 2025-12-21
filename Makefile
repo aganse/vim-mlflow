@@ -1,7 +1,11 @@
-.PHONY: lint test-python test-vim test-vim-vim test-vim-nvim
+.PHONY: lint lint-vim test-python test-vim test-vim-vim test-vim-nvim
 
-flake8:
+codestyle-python-flake8:
 	@python3 -m flake8 python tests/python tests/fixtures
+
+codestyle-vimscript-vint:
+	@command -v vint >/dev/null 2>&1 || { echo "vint not available; install it (pip install vim-vint)."; exit 1; }
+	vint plugin
 
 unittests: unittests-vim unittests-python
 

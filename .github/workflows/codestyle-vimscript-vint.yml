@@ -1,0 +1,18 @@
+name: codestyle-vimscript-vint
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  vint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Install vint
+        run: pip install vim-vint
+      - name: Run vint
+        run: vint plugin
