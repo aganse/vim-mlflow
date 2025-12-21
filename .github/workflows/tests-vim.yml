@@ -1,0 +1,29 @@
+name: Unit Tests (Vimscript)
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  vim-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        editor: [vim, nvim]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install editor
+        run: |
+          sudo apt-get update
+          if [ "${{ matrix.editor }}" = "nvim" ]; then
+            sudo apt-get install -y neovim
+          else
+            sudo apt-get install -y vim
+          fi
+      - name: Run Vimscript tests
+        run: |
+          if [ "${{ matrix.editor }}" = "nvim" ]; then
+            nvim --headless -u NONE -i NONE -c "source tests/vim/run_tests.vim" -c "qa"
+          else
+            vim -Es -u NONE -i NONE -c "source tests/vim/run_tests.vim" -c "qa"
+          fi

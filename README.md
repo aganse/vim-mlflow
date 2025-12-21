@@ -1,6 +1,9 @@
 # vim-mlflow
 ![version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
+[![](https://github.com/aganse/vim-mlflow/workflows/unittests/badge.svg)](https://github.com/aganse/vim-mlflow/actions?query=workflow%3Aunittests)
+[![](https://github.com/aganse/vim-mlflow/workflows/flake8/badge.svg)](https://github.com/aganse/vim-mlflow/actions?query=workflow%3Aflake8)
+
 
 `vim‑mlflow` is a lightweight Vim/NVim plugin that lets you browse and interact
 with MLflow experiments, runs, metrics, parameters, tags, and artifacts directly
@@ -105,6 +108,16 @@ With no configuration parameters set, ascii characters with no color are used.
 
 See the [full listing of vim-mlflow config variables](doc/configuration_params.md)
 that may be of interest to set in your resource file.
+
+## Unittests
+Ensure you have activated the project’s Python environment (e.g. `source
+.venv/bin/activate`) so that `mlflow`, `pynvim`, and tooling like
+`pytest`/`flake8` are importable before running tests.  The `Makefile` provides
+shortcuts:
+- `make lint` runs `flake8` against the Python sources and test helpers.
+- `make test-python` executes the backend unit tests with `pytest`.
+- `make test-vim` runs the Vimscript assertions in both Vim (`make
+  test-vim-vim`) and Neovim (`make test-vim-nvim`).
 
 
 ## Troubleshooting
