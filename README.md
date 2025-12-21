@@ -146,18 +146,19 @@ increase complexity, maintenance burden, or diverge from the project’s stated
 scope.  Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening issues or
 pull requests, and note that response and review times may not be fast.
 
-### Dev tools to be aware of when contributing
+#### Dev tools to be aware of when contributing
 This repo has unittests and codestyle checks, implemented in both CI workflows
 and also available locally via the following Makefile calls.  To run these you
 need a few more packages in your Python environment than when just using the
 plugin as above.  So for dev purposes after entering your Python environment 
 (e.g. `source .venv/bin/activate`) run `make dev-env` which will install the
 list of packages in dev-requirements.txt.  Then you can run the following to
-confirm they pass before submitting a PR for review:
+confirm they pass before submitting a PR for review (and to ease passing the
+CI workflows):
 - `make unittests` runs Vimscript unittests in both Vim and Neovim, and also
   the Python unittests.
-- `make codestyle` lints both the Vimscript in `plugin/` (with `vint`) and the
-  Python in `python/` (with `flake8`).
+- `make codestyle` lints the Vimscript in `plugin/` with `vint` and the
+  Python in `python/` with `flake8`.
 
 
 ## Legacy/older versions
