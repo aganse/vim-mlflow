@@ -1,4 +1,4 @@
-name: Lint (Flake8)
+name: Flake8 (code-style)
 
 on:
   push:

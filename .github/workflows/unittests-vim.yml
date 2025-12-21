@@ -23,7 +23,11 @@ jobs:
       - name: Run Vimscript tests
         run: |
           if [ "${{ matrix.editor }}" = "nvim" ]; then
-            nvim --headless -u NONE -i NONE -c "source tests/vim/run_tests.vim" -c "qa"
+            nvim --headless -u NONE -i NONE \
+              -c "try | source tests/vim/run_tests.vim | catch | echoerr v:exception | cquit 1 | endtry" \
+              -c "messages" -c "qa"
           else
-            vim -Es -u NONE -i NONE -c "source tests/vim/run_tests.vim" -c "qa"
+            vim -E -u NONE -i NONE \
+              -c "try | source tests/vim/run_tests.vim | catch | messages | echoerr v:exception | cquit 1 | endtry" \
+              -c "messages" -c "qa"
           fi
