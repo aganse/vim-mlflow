@@ -1,7 +1,7 @@
 scriptencoding utf-8
 
 let s:plugin_root_dir = fnamemodify(resolve(expand('<sfile>:p')), ':h')
-let s:version_path = fnameescape(fnamemodify(s:plugin_root_dir . '/../VERSION', ':p'))
+let s:version_path = fnamemodify(s:plugin_root_dir . '/../VERSION', ':p')
 if filereadable(s:version_path)
     let s:raw_version = readfile(s:version_path)
     let s:file_version = empty(s:raw_version) ? 'dev' : trim(s:raw_version[0])

@@ -4,7 +4,7 @@
 [![codestyle-python-flake8](https://github.com/aganse/vim-mlflow/workflows/codestyle-python-flake8/badge.svg)](https://github.com/aganse/vim-mlflow/actions/workflows/codestyle-python-flake8.yml)
 [![codestyle-vimscript-vint](https://github.com/aganse/vim-mlflow/workflows/codestyle-vimscript-vint/badge.svg)](https://github.com/aganse/vim-mlflow/actions/workflows/codestyle-vimscript-vint.yml)
 ![licence](https://img.shields.io/badge/license-MIT-blue.svg)
-![version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![version](https://img.shields.io/badge/version-1.0.1-blue.svg)
 
 
 `vim‑mlflow` is a lightweight Vim/NVim plugin that lets you browse and interact
@@ -111,15 +111,17 @@ With no configuration parameters set, ascii characters with no color are used.
 See the [full listing of vim-mlflow config variables](doc/configuration_params.md)
 that may be of interest to set in your resource file.
 
-## Unittests
+## Unittests and codestyle checks
 Ensure you have activated the project’s Python environment (e.g. `source
-.venv/bin/activate`) so that `mlflow`, `pynvim`, and tooling like
-`pytest`/`flake8` are importable before running tests.  The `Makefile` provides
-shortcuts:
-- `make flake8` runs `flake8` against the Python sources and test helpers.
-- `make unittests-python` executes the backend unit tests with `pytest`.
-- `make unittests-vim` runs the Vimscript assertions in both Vim (`make
-  unittests-vim-vim`) and Neovim (`make unittests-vim-nvim`).
+.venv/bin/activate`) so that `mlflow`, `pynvim`, and the dev tools (`pytest`,
+`flake8`, `vim-vint`) are importable.  The `Makefile` mirrors what CI runs and
+is the easiest way to exercise the suite locally:
+- `make env` installs runtime and dev dependencies listed in `requirements.txt`.
+  (Be sure you're in your python environment first!)
+- `make unittests` runs Vimscript unittests in both Vim and Neovim, and also
+  the Python unittests.
+- `make codestyle` lints both the Vimscript in `plugin/` (with `vint`) and the
+  Python in `python/` (with `flake8`).
 
 
 ## Troubleshooting
