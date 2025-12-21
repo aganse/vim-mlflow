@@ -7,35 +7,41 @@ on:
 jobs:
   vim-tests:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        editor: [nvim, vim]
     steps:
       - uses: actions/checkout@v4
-      - name: Install editor
+      - name: Install Vim and Neovim
         run: |
           sudo apt-get update
-          if [ "${{ matrix.editor }}" = "nvim" ]; then
-            sudo apt-get install -y neovim
-          else
-            sudo apt-get install -y vim
-          fi
-      - name: Run Vimscript tests
+          sudo apt-get install -y vim neovim
+      - name: Run Vimscript tests (Neovim then Vim)
         run: |
-          if [ "${{ matrix.editor }}" = "nvim" ]; then
-            echo
-            echo Starting NVim unittest
-            nvim --headless -u NONE -i NONE -V1nvim-test.log \
-              -c "source tests/vim/run_tests.vim" \
-              -c "qa" \
-              || { cat nvim-test.log; rm -f nvim-test.log; exit 1; }
-            rm -f nvim-test.log
-          else
-            echo
-            echo Starting Vim unittest
-            vim -E -u NONE -i NONE -V1vim-test.log \
-              -c "source tests/vim/run_tests.vim" \
-              -c "qa" \
-              || { cat vim-test.log; rm -f vim-test.log; exit 1; }
-            rm -f vim-test.log
+          set +e
+          rm -f nvim-test.log vim-test.log
+
+          echo
+          echo "Starting Neovim unittest"
+          nvim --headless -u NONE -i NONE -V1nvim-test.log \
+            -c "source tests/vim/run_tests.vim" \
+            -c "qa"
+          nvim_status=$?
+          if [ $nvim_status -ne 0 ]; then
+            echo "Neovim test failed:"
+            cat nvim-test.log
+          fi
+
+          echo
+          echo "Starting Vim unittest"
+          vim -E -u NONE -i NONE -V1vim-test.log \
+            -c "source tests/vim/run_tests.vim" \
+            -c "qa"
+          vim_status=$?
+          if [ $vim_status -ne 0 ]; then
+            echo "Vim test failed:"
+            cat vim-test.log
+          fi
+
+          rm -f nvim-test.log vim-test.log
+
+          if [ $nvim_status -ne 0 ] || [ $vim_status -ne 0 ]; then
+            exit 1
           fi
