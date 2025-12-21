@@ -1,9 +1,9 @@
 # vim-mlflow
 ![version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-[![](https://github.com/aganse/vim-mlflow/workflows/unittests-python/badge.svg)](https://github.com/aganse/vim-mlflow/actions?query=workflow%3Aunittests-python)
-[![](https://github.com/aganse/vim-mlflow/workflows/unittests-vim/badge.svg)](https://github.com/aganse/vim-mlflow/actions?query=workflow%3Aunittests-vim)
-[![](https://github.com/aganse/vim-mlflow/workflows/flake8/badge.svg)](https://github.com/aganse/vim-mlflow/actions?query=workflow%3Aflake8)
+[![unittests-python](https://github.com/aganse/vim-mlflow/actions/workflows/unittests-python.yml/badge.svg)](https://github.com/aganse/vim-mlflow/actions/workflows/unittests-python.yml)
+[![unittests-vimscript](https://github.com/aganse/vim-mlflow/actions/workflows/unittests-vim.yml/badge.svg)](https://github.com/aganse/vim-mlflow/actions/workflows/unittests-vim.yml)
+[![flake8](https://github.com/aganse/vim-mlflow/actions/workflows/flake8.yml/badge.svg)](https://github.com/aganse/vim-mlflow/actions/workflows/flake8.yml)
 
 
 `vim‑mlflow` is a lightweight Vim/NVim plugin that lets you browse and interact
