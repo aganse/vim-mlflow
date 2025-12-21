@@ -1,6 +1,6 @@
 let g:vim_mlflow_version = get(g:, 'vim_mlflow_version', '1.0.0')
 
-flet s:plugin_root_dir = fnamemodify(resolve(expand('<sfile>:p')), ':h')
+let s:plugin_root_dir = fnamemodify(resolve(expand('<sfile>:p')), ':h')
 if !get(g:, 'vim_mlflow_skip_python_check', 0) && !has('python3')
     echo 'Error: vim must be compiled with +python3 to run the vim-mlflow plugin.'
     finish

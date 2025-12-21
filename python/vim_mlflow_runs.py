@@ -1,15 +1,11 @@
-from datetime import datetime
 import re
-from urllib.request import urlopen, Request
+from urllib.request import urlopen
 
-import mlflow
 from mlflow.entities import ViewType
 from mlflow.tracking import MlflowClient
 import pandas as pd
 import vim
-import warnings
 
-#warnings.simplefilter(action='ignore', category=FutureWarning)
 
 from vim_mlflow_utils import format_run_duration
 
@@ -33,7 +29,6 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         out.append("No marked runs.")
         return out
 
-
     if verifyTrackingUrl(mlflow_tracking_uri, timeout=float(vim.eval("g:vim_mlflow_timeout"))):
 
         # Find full runids for the short-runids in s:markruns_list
@@ -42,7 +37,10 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         view_type = VIEWTYPE_MAP.get(view_idx, ViewType.ACTIVE_ONLY)
         runinfos = []
         if vim.eval("s:current_exptid") != "":
-            runinfos = client.search_runs([str(vim.eval("s:current_exptid"))], run_view_type=view_type)
+            runinfos = client.search_runs(
+                [str(vim.eval("s:current_exptid"))],
+                run_view_type=view_type
+            )
         fullmarkrunids = []
         for run in runinfos:
             if run.info.run_id[:5] in vim.eval("s:markruns_list"):
@@ -60,11 +58,11 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         for runid in fullmarkrunids:
             mldict = client.get_run(runid).to_dictionary()
             rundict = mldict["info"]
-            if vim.eval("s:runs_tags_are_showing")=='1':
+            if vim.eval("s:runs_tags_are_showing") == '1':
                 rundict.update(mldict["data"]["tags"])
-            if vim.eval("s:runs_params_are_showing")=='1':
+            if vim.eval("s:runs_params_are_showing") == '1':
                 rundict.update(mldict["data"]["params"])
-            if vim.eval("s:runs_metrics_are_showing")=='1':
+            if vim.eval("s:runs_metrics_are_showing") == '1':
                 rundict.update(mldict["data"]["metrics"])
             runsforpd.append(rundict)
         runsdf = pd.DataFrame(runsforpd)
@@ -86,8 +84,11 @@ def getRunsPageMLflow(mlflow_tracking_uri):
                 "mlflow.project.env": "env",
                 }
             )
-        runsdf = runsdf.drop(columns=["run_uuid", "user_id", "mlflow.gitRepoURL"], errors="ignore")  # duplicated cols
-        runsdf = runsdf.drop(columns=["mlflow.log-model.history", "artifact_uri"], errors="ignore")  # huge columns
+        # duplicated cols:
+        runsdf = runsdf.drop(columns=["run_uuid", "user_id", "mlflow.gitRepoURL"], errors="ignore")
+        # huge columns:
+        runsdf = runsdf.drop(columns=["mlflow.log-model.history", "artifact_uri"], errors="ignore")
+
         if "start_time" in runsdf.columns:
             runsdf.insert(0, "start_time", runsdf.pop("start_time"))
         if "end_time" in runsdf.columns:
@@ -96,7 +97,7 @@ def getRunsPageMLflow(mlflow_tracking_uri):
             runsdf.insert(0, "expt_id", runsdf.pop("expt_id"))
 
         # Shorten specified columns
-        runsdf["run_id"] = runsdf["run_id"].apply(lambda x: x[:5])  # run_id is always in run results!
+        runsdf["run_id"] = runsdf["run_id"].apply(lambda x: x[:5])  # run_id always in run results!
         if "source.name" in runsdf.columns:
             runsdf["source.name"] = runsdf["source.name"].apply(lambda x: x.split("/")[-1])
         if "git.commit" in runsdf.columns:
@@ -137,14 +138,18 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         runsdf.columns = colnames
 
         # Hide (remove) specified columns
-        cols2keep = [int(col) for col in range(runsdf.shape[1]) if str(col) not in vim.eval("s:hiddencols_list")]
+        cols2keep = [
+            int(col)
+            for col in range(runsdf.shape[1])
+            if str(col) not in vim.eval("s:hiddencols_list")
+        ]
         runsdf = runsdf.iloc[:, cols2keep]
 
         # Output dataframe
         lines = runsdf.to_string(index=False, justify="center").split('\n')
         for i, line in enumerate(lines):
             out.append(line)
-            if i==0:
+            if i == 0:
                 out.append(make_headerline(lines, vim.eval("g:vim_mlflow_icon_vdivider")))
 
         # Retaining these lines while still debugging occasional column-hiding bug:
@@ -166,7 +171,8 @@ def make_headerline(lines, divchar):
     a = re.sub('[^ ]', divchar, lines[0])
     for i in range(len(lines)-1):
         b = re.sub('[^ ]', divchar, lines[i+1])
-        a = ''.join(map(lambda x: divchar if x[0]==divchar or x[1]==divchar else ' ', zip(a, b)))
+        a = ''.join(map(lambda x: divchar if x[0] == divchar or x[1] == divchar else ' ',
+                        zip(a, b)))
     return a
 
 
@@ -183,9 +189,10 @@ def verifyTrackingUrl(url, timeout=1.0):
         raise RuntimeError("Incorrect and possibly insecure protocol in url")
 
     try:
-        if urlopen(url, timeout=timeout).getcode()==200:
+        if urlopen(url, timeout=timeout).getcode() == 200:
             out = True
-    except:
+    except Exception as exc:  # fallback if you tr
+        print("Unexpected failure: %s", exc)
         out = False
 
     return out

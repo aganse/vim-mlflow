@@ -1,6 +1,6 @@
 # vim-mlflow
 ![version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+[![licence](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/aganse/vim-mlflow/LICENSE)
 [![unittests-python](https://github.com/aganse/vim-mlflow/actions/workflows/unittests-python.yml/badge.svg)](https://github.com/aganse/vim-mlflow/actions/workflows/unittests-python.yml)
 [![unittests-vimscript](https://github.com/aganse/vim-mlflow/actions/workflows/unittests-vim.yml/badge.svg)](https://github.com/aganse/vim-mlflow/actions/workflows/unittests-vim.yml)
 [![flake8](https://github.com/aganse/vim-mlflow/actions/workflows/flake8.yml/badge.svg)](https://github.com/aganse/vim-mlflow/actions/workflows/flake8.yml)

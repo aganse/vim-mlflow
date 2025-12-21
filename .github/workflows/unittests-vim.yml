@@ -1,4 +1,4 @@
-name: Unit Tests (Vimscript)
+name: unittests-vimscript
 
 on:
   push:

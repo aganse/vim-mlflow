@@ -1,4 +1,4 @@
-name: Flake8 (code-style)
+name: flake8
 
 on:
   push:
