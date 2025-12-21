@@ -1,7 +1,8 @@
 # vim-mlflow
 ![version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-[![](https://github.com/aganse/vim-mlflow/workflows/unittests/badge.svg)](https://github.com/aganse/vim-mlflow/actions?query=workflow%3Aunittests)
+[![](https://github.com/aganse/vim-mlflow/workflows/unittests-python/badge.svg)](https://github.com/aganse/vim-mlflow/actions?query=workflow%3Aunittests-python)
+[![](https://github.com/aganse/vim-mlflow/workflows/unittests-vim/badge.svg)](https://github.com/aganse/vim-mlflow/actions?query=workflow%3Aunittests-vim)
 [![](https://github.com/aganse/vim-mlflow/workflows/flake8/badge.svg)](https://github.com/aganse/vim-mlflow/actions?query=workflow%3Aflake8)
 
 
@@ -114,10 +115,10 @@ Ensure you have activated the project’s Python environment (e.g. `source
 .venv/bin/activate`) so that `mlflow`, `pynvim`, and tooling like
 `pytest`/`flake8` are importable before running tests.  The `Makefile` provides
 shortcuts:
-- `make lint` runs `flake8` against the Python sources and test helpers.
-- `make test-python` executes the backend unit tests with `pytest`.
-- `make test-vim` runs the Vimscript assertions in both Vim (`make
-  test-vim-vim`) and Neovim (`make test-vim-nvim`).
+- `make flake8` runs `flake8` against the Python sources and test helpers.
+- `make unittests-python` executes the backend unit tests with `pytest`.
+- `make unittests-vim` runs the Vimscript assertions in both Vim (`make
+  unittests-vim-vim`) and Neovim (`make unittests-vim-nvim`).
 
 
 ## Troubleshooting

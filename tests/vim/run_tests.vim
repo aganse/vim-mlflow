@@ -18,6 +18,7 @@ call SetDefaults()
 call assert_equal(['params', 'metrics', 'tags', 'artifacts'], g:vim_mlflow_section_order)
 
 if len(v:errors) > 0
-    echom string(v:errors)
+    echoerr join(v:errors, "\n")
+    " echom string(v:errors)
     cquit 1
 endif

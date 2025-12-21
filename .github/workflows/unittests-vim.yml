@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        editor: [vim, nvim]
+        editor: [nvim, vim]
     steps:
       - uses: actions/checkout@v4
       - name: Install editor
