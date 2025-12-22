@@ -4,7 +4,7 @@
 [![codestyle-python-flake8](https://github.com/aganse/vim-mlflow/workflows/codestyle-python-flake8/badge.svg)](https://github.com/aganse/vim-mlflow/actions/workflows/codestyle-python-flake8.yml)
 [![codestyle-vimscript-vint](https://github.com/aganse/vim-mlflow/workflows/codestyle-vimscript-vint/badge.svg)](https://github.com/aganse/vim-mlflow/actions/workflows/codestyle-vimscript-vint.yml)
 ![licence](https://img.shields.io/badge/license-MIT-blue.svg)
-![version](https://img.shields.io/badge/version-1.0.1-blue.svg)
+![version](https://img.shields.io/badge/version-1.0.2-blue.svg)
 
 
 `vim‑mlflow` is a lightweight Vim/NVim plugin that lets you browse and interact
