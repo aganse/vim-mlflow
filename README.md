@@ -4,10 +4,10 @@
 [![codestyle-python-flake8](https://github.com/aganse/vim-mlflow/workflows/codestyle-python-flake8/badge.svg)](https://github.com/aganse/vim-mlflow/actions/workflows/codestyle-python-flake8.yml)
 [![codestyle-vimscript-vint](https://github.com/aganse/vim-mlflow/workflows/codestyle-vimscript-vint/badge.svg)](https://github.com/aganse/vim-mlflow/actions/workflows/codestyle-vimscript-vint.yml)
 ![licence](https://img.shields.io/badge/license-MIT-blue.svg)
-![version](https://img.shields.io/badge/version-1.0.1-blue.svg)
+![version](https://img.shields.io/badge/version-1.0.2-blue.svg)
 
 
-`vim‑mlflow` is a lightweight Vim/NVim plugin that lets you browse and interact
+`Vim‑mlflow` is a lightweight Vim/NVim plugin that lets you browse and interact
 with MLflow experiments, runs, metrics, parameters, tags, and artifacts directly
 in your Vim editor.  It opens a dedicated sidebar and a detail pane so you can
 explore data without leaving the terminal, even allowing you to plot metric
@@ -52,10 +52,11 @@ steps).
   `pip install pynvim`
 
 #### 4. Load Vim-mlflow in your Vim/NVim resource file:
-- Add the plugin to your plugin manager, e.g. using Vundle add
+- You can do "manually", e.g. extract zipfile into `~/.vim/bundle/vim-mlflow`,
+  or for NVim add `set runtimepath+=~/.vim/bundle/vim-mlflow`
+  to `~/.config/nvim/init.vim`.
+- Or you can add the plugin to your plugin manager, e.g. using Vundle add
   `Plugin 'aganse/vim-mlflow'` to your resource file and run `:PluginInstall`.
-- Or could do manually, e.g. in NVim's `~/.config/nvim/init.vim` could load
-  via: `set runtimepath+=/Users/aganse/Documents/src/python/vim-mlflow`
 
 #### 5. Set your config settings in your Vim/NVim resource file:
 - Set your MLflow tracking URI.  Fyi the default is `http://localhost:5000`,
@@ -160,6 +161,17 @@ CI workflows):
 - `make codestyle` lints the Vimscript in `plugin/` with `vint` and the
   Python in `python/` with `flake8`.
 
+#### Related repos you may find useful to populate an MLflow installation with test data
+The following tools are useful in their own right to get an MLflow instance up
+and running quickly and to get some modeling up and running quickly.
+But in this case you may find them convenient to populate test contents into
+a temporary MLflow tracking server for dev/test purposes - they created the
+contents seen in screencast above:
+* [aganse/docker_mlflow_db](https://github.com/aganse/docker_mlflow_db):
+    ready-to-run MLflow server with PostgreSQL, AWS S3, Nginx
+* [aganse/py_torch_gpu_dock_mlflow](https://github.com/aganse/py_torch_gpu_dock_mlflow):
+    ready-to-run Python/PyTorch/MLflow-Projects setup to train models on GPU
+
 
 ## Legacy/older versions
 Legacy/older versions of this plugin can be accessed by git checking out an
@@ -175,18 +187,6 @@ release (we'll just keep adding to this table as more releases come out).
 | v0.8                 |  1.26.1                    | vim 8.2                 |
 | v0.9                 |  1.30.0, 2.7.1             | vim 8.2                 |
 | v1.0.0 (this version)|  2.12.0, 2.19.0, 3.6.0     | vim 9.1, nvim v0.11.5   |
-
-
-## Related repos by aganse
-Vim-mlflow is part of a group of tools that you might find useful together (but
-all are separate tools that can be used independently).  In particular the
-following two tools allow to populate test contents into a temporary MLflow
-tracking server for dev/test purposes - they're the contents seen in screencast
-above:
-* [aganse/docker_mlflow_db](https://github.com/aganse/docker_mlflow_db):
-    ready-to-run MLflow server with PostgreSQL, AWS S3, Nginx
-* [aganse/py_torch_gpu_dock_mlflow](https://github.com/aganse/py_torch_gpu_dock_mlflow):
-    ready-to-run Python/PyTorch/MLflow-Projects setup to train models on GPU
 
 
 ## Making the animated screen-shot gif
