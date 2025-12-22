@@ -3,7 +3,7 @@ import io
 import json
 import math
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.request import urlopen
 
 import mlflow
@@ -113,7 +113,9 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
         visible_rows = []
         for run in runs[beginrun_idx:endrun_idx]:
             if run.info.start_time:
-                st = datetime.utcfromtimestamp(run.info.start_time / 1e3).strftime(
+                st = datetime.fromtimestamp(
+                    run.info.start_time / 1e3, tz=timezone.utc
+                ).strftime(
                     "%Y-%m-%d %H:%M:%S"
                 )
             else:
