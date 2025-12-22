@@ -7,7 +7,7 @@
 ![version](https://img.shields.io/badge/version-1.0.2-blue.svg)
 
 
-`vim‑mlflow` is a lightweight Vim/NVim plugin that lets you browse and interact
+`Vim‑mlflow` is a lightweight Vim/NVim plugin that lets you browse and interact
 with MLflow experiments, runs, metrics, parameters, tags, and artifacts directly
 in your Vim editor.  It opens a dedicated sidebar and a detail pane so you can
 explore data without leaving the terminal, even allowing you to plot metric
