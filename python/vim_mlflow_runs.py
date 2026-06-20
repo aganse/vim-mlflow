@@ -2,11 +2,11 @@ import re
 from urllib.request import urlopen
 
 from mlflow.entities import ViewType
-from mlflow.tracking import MlflowClient
 import pandas as pd
 import vim
 
 
+from vim_mlflow_cache import get_session
 from vim_mlflow_utils import format_run_duration
 
 VIEWTYPE_MAP = {
@@ -16,7 +16,13 @@ VIEWTYPE_MAP = {
 }
 
 
+def _vim_flag(expression):
+    """Interpret a Vimscript boolean-like value as a Python bool."""
+    return str(vim.eval(expression)) == "1"
+
+
 def getRunsPageMLflow(mlflow_tracking_uri):
+    """Render the marked-runs comparison buffer from cached run data."""
     out = []
     out.append("Vim-MLflow Marked Runs")
     out.append("\" Press ? for help")
@@ -29,43 +35,81 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         out.append("No marked runs.")
         return out
 
-    if verifyTrackingUrl(mlflow_tracking_uri, timeout=float(vim.eval("g:vim_mlflow_timeout"))):
+    view_idx = int(vim.eval("g:vim_mlflow_viewtype"))
+    view_type = VIEWTYPE_MAP.get(view_idx, ViewType.ACTIVE_ONLY)
+    cache_mode = vim.eval("get(g:, 'vim_mlflow_runs_cache_mode', 'selected_expt')")
+    if cache_mode not in {"selected_expt", "all_expts"}:
+        cache_mode = "selected_expt"
+    session = get_session(
+        mlflow_tracking_uri,
+        view_type,
+        cache_mode,
+        float(vim.eval("g:vim_mlflow_timeout")),
+    )
 
-        # Find full runids for the short-runids in s:markruns_list
-        client = MlflowClient(tracking_uri=mlflow_tracking_uri)
-        view_idx = int(vim.eval("g:vim_mlflow_viewtype"))
-        view_type = VIEWTYPE_MAP.get(view_idx, ViewType.ACTIVE_ONLY)
-        runinfos = []
-        if vim.eval("s:current_exptid") != "":
-            runinfos = client.search_runs(
-                [str(vim.eval("s:current_exptid"))],
-                run_view_type=view_type
-            )
+    if session.ensure_available():
+
+        # Find full runids for the short-runids in s:markruns_list using cached summaries.
+        exptids_to_scan = []
+        current_exptid = str(vim.eval("s:current_exptid"))
+        if current_exptid != "":
+            exptids_to_scan.append(current_exptid)
+        for exptid in vim.eval("s:markruns_exptids"):
+            if str(exptid) not in exptids_to_scan:
+                exptids_to_scan.append(str(exptid))
+
+        runs_by_short = {}
+        for exptid in exptids_to_scan:
+            if exptid == "":
+                continue
+            runs_df = session.get_runs_df(exptid)
+            for _, run in runs_df.iterrows():
+                runs_by_short[(exptid, run["run_id_short"])] = {
+                    "run_id": run["run_id"],
+                    "summary": run.to_dict(),
+                }
+
         fullmarkrunids = []
-        for run in runinfos:
-            if run.info.run_id[:5] in vim.eval("s:markruns_list"):
-                fullmarkrunids.append(run.info.run_id)
-        if len(fullmarkrunids) < len(vim.eval("s:markruns_list")):
-            for exptid in set(vim.eval("s:markruns_exptids")):
-                if exptid != vim.eval("s:current_exptid"):
-                    runinfos = client.search_runs([str(exptid)], run_view_type=view_type)
-                    for run in runinfos:
-                        if run.info.run_id[:5] in vim.eval("s:markruns_list"):
-                            fullmarkrunids.append(run.info.run_id)
+        summaries_by_run = {}
+        markruns_exptids = vim.eval("s:markruns_exptids") or []
+        for idx, runid5 in enumerate(vim.eval("s:markruns_list")):
+            exptid = ""
+            if idx < len(markruns_exptids):
+                exptid = str(markruns_exptids[idx])
+            key = (exptid, runid5)
+            if key not in runs_by_short and current_exptid:
+                key = (current_exptid, runid5)
+            if key in runs_by_short:
+                full_run_id = runs_by_short[key]["run_id"]
+                fullmarkrunids.append(full_run_id)
+                summaries_by_run[full_run_id] = runs_by_short[key]["summary"]
 
-        # Loop over marked full-runids to get their complete info for display:
+        # Loop over marked full-runids to get their complete info for display.
         runsforpd = []
         for runid in fullmarkrunids:
-            mldict = client.get_run(runid).to_dictionary()
-            rundict = mldict["info"]
-            if vim.eval("s:runs_tags_are_showing") == '1':
-                rundict.update(mldict["data"]["tags"])
-            if vim.eval("s:runs_params_are_showing") == '1':
-                rundict.update(mldict["data"]["params"])
-            if vim.eval("s:runs_metrics_are_showing") == '1':
-                rundict.update(mldict["data"]["metrics"])
+            detail = session.get_run_detail(runid)
+            rundict = dict(detail["info"])
+            summary = summaries_by_run.get(runid, {})
+            if summary:
+                rundict.setdefault("start_time", summary.get("start_time_ms"))
+                rundict.setdefault("end_time", summary.get("end_time_ms"))
+                rundict.setdefault("status", summary.get("status"))
+                rundict.setdefault("lifecycle_stage", summary.get("lifecycle_stage"))
+                rundict.setdefault("experiment_id", summary.get("experiment_id"))
+                rundict.setdefault("run_id", summary.get("run_id"))
+                rundict.setdefault("user_id", summary.get("user"))
+            if _vim_flag("s:runs_tags_are_showing"):
+                rundict.update(detail["data"]["tags"])
+            if _vim_flag("s:runs_params_are_showing"):
+                rundict.update(detail["data"]["params"])
+            if _vim_flag("s:runs_metrics_are_showing"):
+                rundict.update(detail["data"]["metrics"])
             runsforpd.append(rundict)
         runsdf = pd.DataFrame(runsforpd)
+        if runsdf.empty:
+            out.append("")
+            out.append("No marked runs.")
+            return out
 
         # Process dataframe regarding collapsed/hidden/shortened columns
 
@@ -129,7 +173,10 @@ def getRunsPageMLflow(mlflow_tracking_uri):
 
         # Collapse specified columns
         colnames = runsdf.columns.values
-        for colidstr in vim.eval("s:collapsedcols_list"):
+        collapsedcols_list = vim.eval("s:collapsedcols_list")
+        if not isinstance(collapsedcols_list, list):
+            collapsedcols_list = []
+        for colidstr in collapsedcols_list:
             col_idx = int(colidstr)
             colname = runsdf.columns[col_idx]
             runsdf[colname] = runsdf[colname].astype(str)
@@ -138,10 +185,13 @@ def getRunsPageMLflow(mlflow_tracking_uri):
         runsdf.columns = colnames
 
         # Hide (remove) specified columns
+        hiddencols_list = vim.eval("s:hiddencols_list")
+        if not isinstance(hiddencols_list, list):
+            hiddencols_list = []
         cols2keep = [
             int(col)
             for col in range(runsdf.shape[1])
-            if str(col) not in vim.eval("s:hiddencols_list")
+            if str(col) not in hiddencols_list
         ]
         runsdf = runsdf.iloc[:, cols2keep]
 

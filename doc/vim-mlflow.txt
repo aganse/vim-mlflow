@@ -34,7 +34,8 @@ limited.
 ==============================================================================
 2. Requirements & install				 *vim-mlflow-install*
 
-vim-mlflow needs a Python-enabled Vim or Neovim and the MLflow Python package.
+vim-mlflow needs a Python-enabled Vim or Neovim plus the `mlflow` and `pandas`
+Python packages.
 
 Minimum supported versions
   - Vim 8.2 compiled with `+python3`
@@ -43,8 +44,8 @@ Minimum supported versions
 Python environment
   1. Create or activate a virtual environment (recommended):
 	`python3 -m venv .venv && source .venv/bin/activate`
-  2. Install MLflow (and pynvim for Neovim users):
-	`pip install mlflow`
+  2. Install MLflow, pandas, and pynvim for Neovim users:
+	`pip install mlflow pandas`
 	`pip install pynvim`
 
 Plugin install
@@ -65,8 +66,9 @@ Launch the UI with either the default mapping or a command:
   - Default mapping: `<Leader>m` (typically `\m`)
   - Command form: `:call RunMLflow()`
 
-Make sure your Vim session runs inside a Python environment where `mlflow` (and
-`pynvim`, if needed) is installed; otherwise the plugin cannot connect.
+Make sure your Vim session runs inside a Python environment where `mlflow`,
+`pandas`, and `pynvim` (if needed) are installed; otherwise the plugin cannot
+connect.
 
 ==============================================================================
 4. Windows & navigation					*vim-mlflow-windows*
@@ -99,7 +101,8 @@ Default mappings in the sidebar buffer (`__MLflow__`):
   `<Enter>`	Open the experiment/run/section under the cursor.
   `o`		Same as `<Enter>`; also plots metrics where available.
   `<Space>`	Mark or unmark the highlighted run (visible in the runs window).
-  `r`		Refresh the sidebar and reset expanded artifacts.
+  `r`		Refresh cached MLflow data for the current view and reset expanded
+		artifacts.
   `R`		Open or refresh the marked runs window (`__MLflowRuns__`).
   `<C-p>`	Toggle the Parameters section visibility.
   `<C-e>`	Toggle the Metrics section visibility.
@@ -116,7 +119,8 @@ Default mappings in the runs window (`__MLflowRuns__`):
   `R`		Refresh the listing of marked runs.
   `.`		Collapse or expand the column under the cursor.
   `x`		Remove the run under the cursor from the marked list.
-  `<C-u>`	Undo all column layout tweaks (collapse/hide/move).
+  `u`		Undo all column layout tweaks (collapse/hide/move) after
+		confirmation.
   `<C-p>`	Include or omit run parameters in the table.
   `<C-e>`	Include or omit run metrics in the table.
   `<C-t>`	Include or omit run tags in the table.
@@ -137,7 +141,11 @@ Only `g:mlflow_tracking_uri` is required.  Common options:
   `g:vim_mlflow_icon_useunicode`	Use Unicode box-drawing/icons (default 0 for ASCII).
   `g:vim_mlflow_plot_width` / `g:vim_mlflow_plot_height`
 				Dimensions of metric plots (default 70x25).
+  `g:vim_mlflow_plotpane_pct`	Height percent for the plot pane when both plot
+				and artifact panes are visible (default 66).
   `g:vim_mlflow_plot_reuse_buffer`	Reuse a single plot buffer (default 1).
+  `g:vim_mlflow_runs_cache_mode`	Run-summary cache scope: `'selected_expt'`
+				(default) or `'all_expts'`.
   `g:vim_mlflow_section_order`	List order for run details (default
 				`['params', 'metrics', 'tags', 'artifacts']`).
   `g:vim_mlflow_timeout`	HTTP timeout (seconds) when probing the tracking URI
@@ -150,9 +158,12 @@ settings, including highlight groups and custom icon characters.
 7. Troubleshooting & tips			*vim-mlflow-troubleshooting*
 
 Slow refreshes~
-  Each refresh queries MLflow synchronously.  Performance is best when Vim runs
-  close to the tracking server.  Increase `g:vim_mlflow_timeout` if connections
-  are flaky.  Long round-trips may still block Vim temporarily.
+  vim-mlflow caches MLflow data inside the embedded Python session, but the
+  first load and explicit refreshes still query MLflow synchronously.
+  Performance is best when Vim runs close to the tracking server.  Increase
+  `g:vim_mlflow_timeout` if connections are flaky, and keep
+  `g:vim_mlflow_runs_cache_mode = 'selected_expt'` for large tracking servers so
+  run summaries are loaded lazily per experiment.
 
 Unicode glyph issues~
   Set `let g:vim_mlflow_icon_useunicode = 0` to fall back to ASCII characters if
@@ -162,15 +173,17 @@ Unicode glyph issues~
 Plugin does not load~
   - Confirm Vim reports `+python3` (`vim --version | grep +python3`).
   - In Neovim ensure `pynvim` is installed in the same environment.
-  - From Vim run `:py3 import mlflow` to verify MLflow is importable.
+  - From Vim run `:py3 import mlflow, pandas` to verify both are importable.
 
 Neovim layout wrapping~
-  Neovim enables line wrapping by default.  Add `setlocal nowrap` in your config
-  if columns in vim-mlflow buffers appear misaligned.
+  vim-mlflow now sets `nowrap` on its managed buffers.  If columns still appear
+  misaligned in Neovim, check for custom autocommands or filetype hooks that may
+  be overriding window-local options.
 
 Artifacts~
-  Text artifacts (`*.txt`, `*.json`, `*.yaml`, `MLmodel`) open directly.  Binary
-  artifacts are listed but not opened.
+  Text artifacts (`*.txt`, `*.json`, `*.yaml`, `MLmodel`) open directly.  Valid
+  `.json` artifacts are pretty-printed in the scratch viewer for readability.
+  Binary artifacts are listed but not opened.
 
 ==============================================================================
 8. Further reading						*vim-mlflow-links*

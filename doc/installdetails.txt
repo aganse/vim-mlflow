@@ -11,8 +11,8 @@
 - `python3 -m venv .venv`
 - `source .venv/bin/activate  # syntax for linux/mac`
 
-#### 3. Install the `mlflow` Python package (and also `pynvim` for Nvim):
-- `pip install mlflow` (in both Vim and NVim)
+#### 3. Install the required Python packages (`mlflow`, `pandas`, and `pynvim` for Nvim):
+- `pip install mlflow pandas` (in both Vim and NVim)
 - In NVim you also need this package in your env to support the python:
   `pip install pynvim`
 

@@ -46,8 +46,8 @@ steps).
 - `python3 -m venv .venv`
 - `source .venv/bin/activate  # syntax for linux/mac`
 
-#### 3. Install the `mlflow` Python package (and also `pynvim` for Nvim):
-- `pip install mlflow` (in both Vim and NVim)
+#### 3. Install the required Python packages (`mlflow`, `pandas`, and `pynvim` for Nvim):
+- `pip install mlflow pandas` (in both Vim and NVim)
 - In NVim you also need this package in your env to support the python:
   `pip install pynvim`
 
@@ -99,6 +99,8 @@ let g:vim_mlflow_icon_useunicode = 1  " default 0 value uses ascii chars instead
 let g:vim_mlflow_width = get(g:, 'vim_mlflow_width', 50)  " width of mlflow window
 let g:vim_mlflow_expts_length = 10  " experiments to show at a time
 let g:vim_mlflow_runs_length = 15   " runs to show at a time
+let g:vim_mlflow_plotpane_pct = 66  " plot pane height percent when artifact pane is also open
+let g:vim_mlflow_runs_cache_mode = 'selected_expt'  " or 'all_expts'
 ```
 
 By default Vim-mlflow uses standard color groups like "Comment" and "Statement"
@@ -114,27 +116,28 @@ that may be of interest to set in your resource file.
 
 
 ## Troubleshooting
-- The sidebar may be slow on high-latency MLflow connections because each
-  refresh starts a short-lived Python process and re-queries MLflow.
-  Performance seems fine when Vim runs close to the tracking server; running
-  all components in AWS within same region, it has worked well for our team.
-  On slower links, increasing `g:vim_mlflow_timeout` may help.  A future version
-  could use a persistent Python process to reduce queries if necessary, but so
-  far this has not been a common enough concern.
+- The sidebar now caches MLflow data in the embedded Python session, but the
+  first load and explicit `r` refreshes still query MLflow synchronously.
+  Performance is best when Vim runs close to the tracking server. On slower
+  links, increasing `g:vim_mlflow_timeout` may help; for especially large
+  tracking servers, keep `g:vim_mlflow_runs_cache_mode = 'selected_expt'` so
+  run summaries are loaded lazily per experiment instead of eagerly across all
+  experiments.
 - Unicode icons require a font that includes box-drawing characters.  Set
   `g:vim_mlflow_icon_useunicode = 0` if glyphs look broken as the simple quick
   fix, and also note there are config vars to change individual icon characters.
 - Text artifacts (`*.txt`, `*.json`, `*.yaml`, `MLmodel`) open directly in the
-  plugin.  Binary artifacts are listed but cannot be opened in the plugin.
+  plugin. `.json` artifacts are pretty-printed in the scratch viewer when they
+  contain valid JSON. Binary artifacts are listed but cannot be opened in the
+  plugin.
 - If the plugin fails to load in classic Vim, verify that Vim supports Python
-  (vim --version) and that mlflow is importable in Vim’s Python environment
-  (:py3 import mlflow). In Neovim, also ensure pynvim is installed.
-- In NVim if the layout seems screwy, check step 5 above in Installation
-  regarding `nowrap`.
-- Neovim enables line wrapping by default, which can break table layouts in
-  this plugin. Adding `setlocal nowrap` fixes this globally. The issue is most
-  noticeable in the MLflowRuns window (opened with R), which displays many
-  columns.
+  (vim --version) and that both `mlflow` and `pandas` are importable in Vim’s
+  Python environment (`:py3 import mlflow, pandas`). In Neovim, also ensure
+  `pynvim` is installed.
+- Neovim enables line wrapping by default in many setups, but vim-mlflow now
+  sets `nowrap` on its managed buffers. If wrapping still appears in a plugin
+  buffer, check for custom autocommands or filetype hooks overriding window-
+  local options.
 
 
 ## Contributing

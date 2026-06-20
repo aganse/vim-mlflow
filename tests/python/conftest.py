@@ -28,6 +28,16 @@ class _FakeVim:
             return self.g.get(expression[2:], 0)
         if expression.startswith("s:"):
             return self.s.get(expression[2:], 0)
+        get_match = re.fullmatch(
+            r"get\(([gs]):,\s*'([^']+)'(?:,\s*([^\)]+))?\)", expression
+        )
+        if get_match:
+            scope = get_match.group(1)
+            name = get_match.group(2)
+            raw_default = get_match.group(3)
+            default = 0 if raw_default is None else self._parse_value(raw_default.strip())
+            mapping = self.g if scope == "g" else self.s
+            return mapping.get(name, default)
 
         def _replace(match: re.Match) -> str:
             scope = match.group(1)
@@ -80,6 +90,14 @@ def vim_mlflow_env(monkeypatch):
         "runs": [],
         "runs_by_id": {},
         "metric_history": {},
+        "artifacts": {},
+        "calls": {
+            "search_experiments": 0,
+            "search_runs": 0,
+            "get_run": 0,
+            "get_metric_history": 0,
+            "list_artifacts": 0,
+        },
     }
 
     class FakeMlflowClient:
@@ -87,16 +105,29 @@ def vim_mlflow_env(monkeypatch):
             self.tracking_uri = tracking_uri
 
         def search_experiments(self, view_type):
+            fake_state["calls"]["search_experiments"] += 1
             return list(fake_state["experiments"])
 
         def search_runs(self, experiment_ids: List[str], run_view_type):
-            return list(fake_state["runs"])
+            fake_state["calls"]["search_runs"] += 1
+            experiment_id_set = {str(experiment_id) for experiment_id in experiment_ids}
+            return [
+                run
+                for run in fake_state["runs"]
+                if str(run.info.experiment_id) in experiment_id_set
+            ]
 
         def get_run(self, run_id: str):
+            fake_state["calls"]["get_run"] += 1
             return fake_state["runs_by_id"][run_id]
 
         def get_metric_history(self, run_id: str, key: str):
+            fake_state["calls"]["get_metric_history"] += 1
             return list(fake_state["metric_history"].get((run_id, key), []))
+
+        def list_artifacts(self, run_id: str, path=None):
+            fake_state["calls"]["list_artifacts"] += 1
+            return list(fake_state["artifacts"].get((run_id, path), []))
 
     class FakeViewType:
         ACTIVE_ONLY = object()
@@ -114,8 +145,9 @@ def vim_mlflow_env(monkeypatch):
     monkeypatch.setitem(sys.modules, "mlflow.entities", entities_module)
     monkeypatch.setitem(sys.modules, "mlflow.tracking", tracking_module)
 
-    if "vim_mlflow" in sys.modules:
-        del sys.modules["vim_mlflow"]
+    for module_name in ["vim_mlflow", "vim_mlflow_runs", "vim_mlflow_cache"]:
+        if module_name in sys.modules:
+            del sys.modules[module_name]
     import vim_mlflow  # noqa: F401
 
     module = importlib.import_module("vim_mlflow")

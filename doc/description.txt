@@ -10,7 +10,7 @@ steps).
 
 
 ## TL;DR
-* Must run Vim/NVim in a python environment with `mlflow` installed.
+* Must run Vim/NVim in a python environment with `mlflow` and `pandas` installed.
 * Vim must be a compiled-with-python version (check `vim --verison` for `+python3`);
   or for NVim just install the `pynvim` package in that python environment as well.
 * Put `Plugin 'aganse/vim-mlflow'` or your package manager equivalent in your
