@@ -12,6 +12,13 @@ MLflow API access plus formatting. Tests are split between `tests/python/` for
 pytest coverage, `tests/vim/` for headless Vim/Neovim assertions, and
 `tests/fixtures/` for fake MLflow objects. User help and reference docs belong
 in `doc/`; update `doc/vim-mlflow.txt` for user-facing behavior changes.
+Overall this project should be flexible in terms of working with different
+versions of MLflow - taking advantage of and generally aimed at the latest
+versions, while still functioning (even if in a reduced capacity when absolutely
+necessary) with older versions of MLflow - including even MLflow 2.x.
+Currently this project is only aimed at supporting the "Machine Learning model
+training" side of MLflow, and not the "LLMs and Agents" side of MLflow 3.x yet,
+but we want still the architecture to be ready to support that later.
 
 ## Documentation guidelines
 The top level `README.md` should be in GitHub Markdown flavor and contain:
