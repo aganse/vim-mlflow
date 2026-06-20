@@ -1,5 +1,9 @@
 # Repository Guidelines
 
+Contents here for agents should be consistent with those in CONTRIBUTING.md for
+humans - please mention any conflicts.
+
+
 ## Project Structure & Module Organization
 `plugin/vim-mlflow.vim` contains the Vimscript entrypoint, defaults, window
 management, and key mappings. Python helpers live in `python/`
