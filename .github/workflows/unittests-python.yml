@@ -13,6 +13,6 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install dependencies
-        run: pip install pytest
+        run: pip install -r dev-requirements.txt
       - name: Run pytest
         run: pytest tests/python
