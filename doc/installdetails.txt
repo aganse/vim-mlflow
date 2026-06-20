@@ -1,0 +1,37 @@
+## Installation
+
+#### 1. Check that your Vim supports python3:
+- In Vim: `vim --version | grep +python3` (if no +python3 line is found, you
+  must install a Vim build compiled with Python3.)
+- In NVim you're good to go as long as you install pynvim in your python env
+  down in #3.
+- Tested successfully on Vim 8.2+ and NVim v0.11.5, with Python3.10+.
+
+#### 2. Highly recommended to create/use a python virtual environment:
+- `python3 -m venv .venv`
+- `source .venv/bin/activate  # syntax for linux/mac`
+
+#### 3. Install the `mlflow` Python package (and also `pynvim` for Nvim):
+- `pip install mlflow` (in both Vim and NVim)
+- In NVim you also need this package in your env to support the python:
+  `pip install pynvim`
+
+#### 4. Load Vim-mlflow in your Vim/NVim resource file:
+- You can do "manually", e.g. extract zipfile into `~/.vim/bundle/vim-mlflow`,
+  or for NVim add `set runtimepath+=~/.vim/bundle/vim-mlflow`
+  to `~/.config/nvim/init.vim`.
+- Or you can add the plugin to your plugin manager, e.g. using Vundle add
+  `Plugin 'aganse/vim-mlflow'` to your resource file and run `:PluginInstall`.
+
+#### 5. Set your config settings in your Vim/NVim resource file:
+- Set your MLflow tracking URI.  Fyi the default is `http://localhost:5000`,
+  which may be relevant for a simple local test setup, but often you'll have
+  some other host and port to set:
+  `let g:mlflow_tracking_uri = "http://<mlflow_trk_svr_host>:<port>"`
+
+- The Configuration section has quite a list of settings (colors, characters,
+  sizing, etc) that can be customized.
+  
+- For NVim you may need to set `setlocal nowrap` in your resource file - see
+  last Troubleshooting tip below regarding line-wrap default in NVim affecting
+  content layout.

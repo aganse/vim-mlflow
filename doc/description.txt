@@ -1,0 +1,43 @@
+`Vim‑mlflow` is a lightweight Vim/NVim plugin that lets you browse and interact
+with MLflow experiments, runs, metrics, parameters, tags, and artifacts directly
+in your Vim editor.  It opens a dedicated sidebar and a detail pane so you can
+explore data without leaving the terminal, even allowing you to plot metric
+histories and browse non-graphical artifacts.  The plugin is written in
+Vimscript with embedded Python and talks to MLflow through its Python API.
+It works with both MLflow3.x and MLflow2.x ML tracking servers (but not the
+GenAI traces/etc in MLflow3.x currently; feedback/demand can guide such future
+steps).
+
+
+## TL;DR
+* Must run Vim/NVim in a python environment with `mlflow` installed.
+* Vim must be a compiled-with-python version (check `vim --verison` for `+python3`);
+  or for NVim just install the `pynvim` package in that python environment as well.
+* Put `Plugin 'aganse/vim-mlflow'` or your package manager equivalent in your
+  resource file to load plugin.
+* At minimum set `let g:mlflow_tracking_uri = "http://<mlflow_trk_svr_host>:<port>"`
+  in your resource file to your MLflow tracking server.  Other options listed below.
+* Press `\m` (leader-key and `m`) to start the plugin, and press `?` in there to
+  check the help listing for other keys.  Navigate with the standard vim movement
+  keys, and "open" various items via `o` or `<enter>`.
+
+
+## Usage
+* Ensure you're in your python environment with MLflow before starting Vim.
+* Press `\m` to start vim-mlflow (default setting, ie leader-key and m. or can
+  use `:call RunMLflow()`).  You can update that leader/key mapping via
+  `nnoremap <leader>m :call RunMLflow()<CR>`.
+* Vim-mlflow opens a sidebar (`__MLflow__`) that lists all experiments on the
+  connected MLflow server.
+* Navigate the cursor around with the standard vim movement keys, and "open"
+  various items via `o` or `<enter>` key.
+* Select experiments to show their respective lists of runs; drill into runs to
+  view metrics, parameters, tags, and artifacts. View ASCII plots of metric
+  histories, and text artifacts inline.
+* Open a run comparison pane (`__MLflowRuns__`) to compare metrics across
+  multiple selected runs in multiple experiments.
+* Press `?` in the sidebar for a full help listing of the keys map.
+
+
+Additional detailed info is available about configuration options, troubleshooting,
+and more in the README.md file found in the zipfile and the Github repo.
