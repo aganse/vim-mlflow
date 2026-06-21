@@ -16,7 +16,7 @@ embedded Python and talks to MLflow through its Python API.  It works with both
 MLflow3.x and MLflow2.x ML tracking servers (but not the GenAI traces/etc in
 MLflow3.x currently).
 
-[![example vim-mlflow screenshot](doc/demo_1.0.0_light.gif)](doc/demo_1.0.0_light.gif)
+[![example vim-mlflow screenshot](doc/demo_1.1.0_light.gif)](doc/demo_1.1.0_light.gif)
 
 
 ## TL;DR
@@ -140,7 +140,8 @@ Just so I remember for next time:
 * `~/.cargo/bin/asciinema rec demo.cast  # start recording terminal screen to file`
 * Manually conduct the usage sequence to record, which gets saved to file; ctrl-D to exit/end when done.
 * Install [agg](https://github.com/asciinema/agg) (`cargo install --git https://github.com/asciinema/agg`)
-* `~/.cargo/bin/agg --speed 2 demo.cast demo.gif  # convert the asciinema cast to animated gif`
+* `~/.cargo/bin/agg --font-size 24 --speed 2 --theme github-light --font-family "SauceCodePro Nerd Font" demo.cast demo.gif  # convert the asciinema cast to animated gif`
+  (the "SauceCodePro Nerd Font" is what my system uses but that arg can be left out)
 
 
 ## Acknowledgements

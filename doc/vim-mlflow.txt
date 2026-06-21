@@ -1,4 +1,4 @@
-*vim-mlflow.txt*	For Vim version 8.2+ and Neovim v0.11.5+	Last change: 2025 Dec 16
+*vim-mlflow.txt*	For Vim version 8.2+ and Neovim v0.11.5+	Last change: 2026 Jun 20
 
 				*vim-mlflow*
 vim-mlflow is a Vim/Neovim plugin for browsing MLflow experiments, runs,
