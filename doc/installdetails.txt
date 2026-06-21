@@ -32,6 +32,5 @@
 - The Configuration section has quite a list of settings (colors, characters,
   sizing, etc) that can be customized.
   
-- For NVim you may need to set `setlocal nowrap` in your resource file - see
-  last Troubleshooting tip below regarding line-wrap default in NVim affecting
-  content layout.
+- vim-mlflow manages `nowrap` itself for its scratch buffers, so no extra NVim
+  line-wrap setting should normally be needed.

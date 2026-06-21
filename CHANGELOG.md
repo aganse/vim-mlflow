@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## [1.1.0] - 2026-06-20
 
 ### Added
 - Added a Python session cache for experiments, run summaries, run details,

@@ -4,24 +4,23 @@
 [![codestyle-python-flake8](https://github.com/aganse/vim-mlflow/workflows/codestyle-python-flake8/badge.svg)](https://github.com/aganse/vim-mlflow/actions/workflows/codestyle-python-flake8.yml)
 [![codestyle-vimscript-vint](https://github.com/aganse/vim-mlflow/workflows/codestyle-vimscript-vint/badge.svg)](https://github.com/aganse/vim-mlflow/actions/workflows/codestyle-vimscript-vint.yml)
 ![licence](https://img.shields.io/badge/license-MIT-blue.svg)
-![version](https://img.shields.io/badge/version-1.0.2-blue.svg)
+![version](https://img.shields.io/badge/version-1.1.0-blue.svg)
 
 
-`Vim‑mlflow` is a lightweight Vim/NVim plugin that lets you browse and interact
-with MLflow experiments, runs, metrics, parameters, tags, and artifacts directly
-in your Vim editor.  It opens a dedicated sidebar and a detail pane so you can
-explore data without leaving the terminal, even allowing you to plot metric
-histories and browse non-graphical artifacts.  The plugin is written in
-Vimscript with embedded Python and talks to MLflow through its Python API.
-It works with both MLflow3.x and MLflow2.x ML tracking servers (but not the
-GenAI traces/etc in MLflow3.x currently; feedback/demand can guide such future
-steps).
+`Vim‑mlflow` is a Vim/NVim plugin that lets you browse and interact with MLflow
+experiments, runs, metrics, parameters, tags, and artifacts directly in your
+Vim editor.  It opens a dedicated sidebar and a detail pane so you can explore
+data without leaving the terminal, even allowing you to plot metric histories
+and browse non-graphical artifacts.  The plugin is written in Vimscript with
+embedded Python and talks to MLflow through its Python API.  It works with both
+MLflow3.x and MLflow2.x ML tracking servers (but not the GenAI traces/etc in
+MLflow3.x currently).
 
 [![example vim-mlflow screenshot](doc/demo_1.0.0_light.gif)](doc/demo_1.0.0_light.gif)
 
 
 ## TL;DR
-* Must run Vim/NVim in a python environment with `mlflow` installed.
+* Must run Vim/NVim in a python environment with `mlflow` and `pandas` installed.
 * Vim must be a compiled-with-python version (check `vim --verison` for `+python3`);
   or for NVim just install the `pynvim` package in that python environment as well.
 * Put `Plugin 'aganse/vim-mlflow'` or your package manager equivalent in your
@@ -67,13 +66,12 @@ steps).
 - The Configuration section has quite a list of settings (colors, characters,
   sizing, etc) that can be customized.
   
-- For NVim you may need to set `setlocal nowrap` in your resource file - see
-  last Troubleshooting tip below regarding line-wrap default in NVim affecting
-  content layout.
+- vim-mlflow manages `nowrap` itself for its scratch buffers, so no extra NVim
+  line-wrap setting should normally be needed.
 
 
 ## Usage
-* Ensure you're in your python environment with MLflow before starting Vim.
+* Ensure you're in your python environment with `mlflow` and `pandas` before starting Vim.
 * Press `\m` to start vim-mlflow (default setting, ie leader-key and m. or can
   use `:call RunMLflow()`).  You can update that leader/key mapping via
   `nnoremap <leader>m :call RunMLflow()<CR>`.
@@ -91,7 +89,7 @@ steps).
 
 ## Configuration
 Only `g:mlflow_tracking_uri` is required to be set by user (e.g. in resource file).
-But a typical small set of vim-mlflow config variables that one might set is:
+But a typical small set of vim-mlflow config variables that one would usually set is:
 ```vim
 " Vim-mlflow settings
 let g:mlflow_tracking_uri = "http://localhost:5000"  " running locally or via ssh-tunnel
@@ -99,8 +97,8 @@ let g:vim_mlflow_icon_useunicode = 1  " default 0 value uses ascii chars instead
 let g:vim_mlflow_width = get(g:, 'vim_mlflow_width', 50)  " width of mlflow window
 let g:vim_mlflow_expts_length = 10  " experiments to show at a time
 let g:vim_mlflow_runs_length = 15   " runs to show at a time
-let g:vim_mlflow_plotpane_pct = 66  " plot pane height percent when artifact pane is also open
-let g:vim_mlflow_runs_cache_mode = 'selected_expt'  " or 'all_expts'
+let g:vim_mlflow_plotpane_pct = 66  " plot pane height % when artifact pane is also open
+let g:vim_mlflow_runs_cache_mode = 'selected_expt'  " (or 'all_expts') how much to query at once 
 ```
 
 By default Vim-mlflow uses standard color groups like "Comment" and "Statement"
@@ -109,48 +107,18 @@ work" in vim-mlflow.  (E.g. the animated GIF above used
 [PaperColor](https://github.com/vim-scripts/PaperColor.vim) colorscheme;
 see also its [dark-mode equivalent animated GIF](doc/demo_1.0.0_dark.gif)).
 But all details can be changed, per listing below.
-With no configuration parameters set, ascii characters with no color are used.
+With no configuration parameters set, ASCII characters with no color are used.
 
 See the [full listing of vim-mlflow config variables](doc/configuration_params.md)
 that may be of interest to set in your resource file.
 
 
-## Troubleshooting
-- The sidebar now caches MLflow data in the embedded Python session, but the
-  first load and explicit `r` refreshes still query MLflow synchronously.
-  Performance is best when Vim runs close to the tracking server. On slower
-  links, increasing `g:vim_mlflow_timeout` may help; for especially large
-  tracking servers, keep `g:vim_mlflow_runs_cache_mode = 'selected_expt'` so
-  run summaries are loaded lazily per experiment instead of eagerly across all
-  experiments.
-- Unicode icons require a font that includes box-drawing characters.  Set
-  `g:vim_mlflow_icon_useunicode = 0` if glyphs look broken as the simple quick
-  fix, and also note there are config vars to change individual icon characters.
-- Text artifacts (`*.txt`, `*.json`, `*.yaml`, `MLmodel`) open directly in the
-  plugin. `.json` artifacts are pretty-printed in the scratch viewer when they
-  contain valid JSON. Binary artifacts are listed but cannot be opened in the
-  plugin.
-- If the plugin fails to load in classic Vim, verify that Vim supports Python
-  (vim --version) and that both `mlflow` and `pandas` are importable in Vim’s
-  Python environment (`:py3 import mlflow, pandas`). In Neovim, also ensure
-  `pynvim` is installed.
-- Neovim enables line wrapping by default in many setups, but vim-mlflow now
-  sets `nowrap` on its managed buffers. If wrapping still appears in a plugin
-  buffer, check for custom autocommands or filetype hooks overriding window-
-  local options.
-
-
 ## Contributing
-Contributions are welcome; just note this project is maintained on a best-effort
-basis by a single maintainer (Andy Ganse) alongside other commitments, and so
-focused on long-term maintainability more than rapid feature growth.  Bug fixes,
-documentation improvements, and small, well-scoped enhancements are the most
-likely to be accepted.  Feature requests may be declined if they significantly
-increase complexity, maintenance burden, or diverge from the project’s stated
-scope.  Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening issues or
-pull requests, and note that response and review times may not be fast.
+Contributions are welcome. This project is maintained on a best-effort basis,
+so bug fixes, documentation improvements, and small, well-scoped enhancements
+are the most likely to be accepted. Please read [CONTRIBUTING.md](CONTRIBUTING.md)
+before opening issues or pull requests.
 
-#### Dev tools to be aware of when contributing
 This repo has unittests and codestyle checks, implemented in both CI workflows
 and also available locally via the following Makefile calls.  To run these you
 need a few more packages in your Python environment than when just using the
@@ -164,35 +132,9 @@ CI workflows):
 - `make codestyle` lints the Vimscript in `plugin/` with `vint` and the
   Python in `python/` with `flake8`.
 
-#### Related repos you may find useful to populate an MLflow installation with test data
-The following tools are useful in their own right to get an MLflow instance up
-and running quickly and to get some modeling up and running quickly.
-But in this case you may find them convenient to populate test contents into
-a temporary MLflow tracking server for dev/test purposes - they created the
-contents seen in screencast above:
-* [aganse/docker_mlflow_db](https://github.com/aganse/docker_mlflow_db):
-    ready-to-run MLflow server with PostgreSQL, AWS S3, Nginx
-* [aganse/py_torch_gpu_dock_mlflow](https://github.com/aganse/py_torch_gpu_dock_mlflow):
-    ready-to-run Python/PyTorch/MLflow-Projects setup to train models on GPU
-
-
-## Legacy/older versions
-Legacy/older versions of this plugin can be accessed by git checking out an
-earlier version locally, and then referencing it in your .vimrc (for classic
-Vim like `Plugin 'file:///my/path/to/python/vim-mlflow'`.
-Or similarly you can set that path in your runtimepath in NVim (without the
-`file://`).
-That said, it's recommended to use >= v1.0.0 - that's the first "official"
-release (we'll just keep adding to this table as more releases come out).
-
-|  vim-mlflow git tag  | tested with mlflow version | tested with vim version |
-| ---------------------| -------------------------- | ----------------------- |
-| v0.8                 |  1.26.1                    | vim 8.2                 |
-| v0.9                 |  1.30.0, 2.7.1             | vim 8.2                 |
-| v1.0.0 (this version)|  2.12.0, 2.19.0, 3.6.0     | vim 9.1, nvim v0.11.5   |
-
 
 ## Making the animated screen-shot gif
+Just so I remember for next time:
 * Install [rust](https://rust-lang.org/tools/install) (`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`)
 * Install [asciinema](https://github.com/asciinema/asciinema) (`cargo install --locked --git https://github.com/asciinema/asciinema`)
 * `~/.cargo/bin/asciinema rec demo.cast  # start recording terminal screen to file`
