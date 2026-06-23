@@ -1,16 +1,15 @@
-`Vim‑mlflow` is a lightweight Vim/NVim plugin that lets you browse and interact
-with MLflow experiments, runs, metrics, parameters, tags, and artifacts directly
-in your Vim editor.  It opens a dedicated sidebar and a detail pane so you can
-explore data without leaving the terminal, even allowing you to plot metric
-histories and browse non-graphical artifacts.  The plugin is written in
-Vimscript with embedded Python and talks to MLflow through its Python API.
-It works with both MLflow3.x and MLflow2.x ML tracking servers (but not the
-GenAI traces/etc in MLflow3.x currently; feedback/demand can guide such future
-steps).
+`Vim‑mlflow` is a Vim/NVim plugin that lets you browse and interact with MLflow
+experiments, runs, metrics, parameters, tags, and artifacts directly in your
+Vim editor.  It opens a dedicated sidebar and a detail pane so you can explore
+data without leaving the terminal, even allowing you to plot metric histories
+and browse non-graphical artifacts.  The plugin is written in Vimscript with
+embedded Python and talks to MLflow through its Python API.  It works with both
+MLflow3.x and MLflow2.x ML tracking servers (but not the GenAI traces/etc in
+MLflow3.x currently).
 
 
 ## TL;DR
-* Must run Vim/NVim in a python environment with `mlflow` installed.
+* Must run Vim/NVim in a python environment with `mlflow` and `pandas` installed.
 * Vim must be a compiled-with-python version (check `vim --verison` for `+python3`);
   or for NVim just install the `pynvim` package in that python environment as well.
 * Put `Plugin 'aganse/vim-mlflow'` or your package manager equivalent in your
@@ -23,7 +22,7 @@ steps).
 
 
 ## Usage
-* Ensure you're in your python environment with MLflow before starting Vim.
+* Ensure you're in your python environment with `mlflow` and `pandas` before starting Vim.
 * Press `\m` to start vim-mlflow (default setting, ie leader-key and m. or can
   use `:call RunMLflow()`).  You can update that leader/key mapping via
   `nnoremap <leader>m :call RunMLflow()<CR>`.

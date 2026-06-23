@@ -68,6 +68,8 @@ function! SetDefaults()
     let g:vim_mlflow_plot_height = get(g:, 'vim_mlflow_plot_height', 25)
     let g:vim_mlflow_plot_width = get(g:, 'vim_mlflow_plot_width', 70)
     let g:vim_mlflow_plot_xaxis = get(g:, 'vim_mlflow_plot_xaxis', 'step')
+    let g:vim_mlflow_plotpane_pct = str2nr(get(g:, 'vim_mlflow_plotpane_pct', 66))
+    let g:vim_mlflow_plotpane_pct = max([20, min([80, g:vim_mlflow_plotpane_pct])])
     let g:vim_mlflow_plot_reuse_buffer = get(g:, 'vim_mlflow_plot_reuse_buffer', 1)
     let g:vim_mlflow_color_plot_title = get(g:, 'vim_mlflow_color_plot_title', 'Statement')
     let g:vim_mlflow_color_plot_axes = get(g:, 'vim_mlflow_color_plot_axes', 'vimParenSep')
@@ -75,6 +77,10 @@ function! SetDefaults()
     let g:vim_mlflow_color_between_plotpts = get(g:, 'vim_mlflow_color_between_plotpts', 'Comment')
     let g:vim_mlflow_artifact_expanded = get(g:, 'vim_mlflow_artifact_expanded', {})
     let g:vim_mlflow_artifacts_max_depth = get(g:, 'vim_mlflow_artifacts_max_depth', 3)
+    let g:vim_mlflow_runs_cache_mode = get(g:, 'vim_mlflow_runs_cache_mode', 'selected_expt')
+    if index(['selected_expt', 'all_expts'], g:vim_mlflow_runs_cache_mode) ==# -1
+        let g:vim_mlflow_runs_cache_mode = 'selected_expt'
+    endif
     let g:vim_mlflow_section_order = get(g:, 'vim_mlflow_section_order', ['params', 'metrics', 'tags', 'artifacts'])
     if type(g:vim_mlflow_section_order) !=# type([])
         let g:vim_mlflow_section_order = ['params', 'metrics', 'tags', 'artifacts']
@@ -105,22 +111,204 @@ function! s:GetPlotBufferName()
 endfunction
 
 
-function! s:EnsurePlotWindow(bufname)
-    if exists('s:plot_winid') && win_gotoid(s:plot_winid)
-        if bufexists(a:bufname)
-            execute 'buffer ' . fnameescape(a:bufname)
-        else
-            execute 'enew'
-            execute 'file ' . fnameescape(a:bufname)
+" Return the split command for the shared viewer column opposite the sidebar.
+function! s:GetViewerSplitCmd()
+    return g:vim_mlflow_vside ==# 'left' ? 'vert botright' : 'vert topleft'
+endfunction
+
+
+" Match managed viewer buffer names for plot and artifact panes.
+function! s:GetManagedViewerPattern(kind)
+    if a:kind ==# 'plot'
+        return '^__MLflowMetricPlot'
+    endif
+    return '^artifact://'
+endfunction
+
+
+" Check whether a window id still points at a live window.
+function! s:IsLiveWindow(winid)
+    return a:winid > 0 && win_id2win(a:winid) !=# 0
+endfunction
+
+
+" Check whether a window id points at the main MLflow sidebar.
+function! s:IsMainWindow(winid)
+    return exists('s:mlflow_winid') && a:winid ==# s:mlflow_winid
+endfunction
+
+
+" Track the current plot and artifact viewer window ids.
+function! s:GetViewerWinid(kind)
+    if a:kind ==# 'plot'
+        return get(s:, 'plot_winid', -1)
+    endif
+    return get(s:, 'artifact_winid', -1)
+endfunction
+
+
+" Persist the plot or artifact viewer window id.
+function! s:SetViewerWinid(kind, winid)
+    if a:kind ==# 'plot'
+        let s:plot_winid = a:winid
+    else
+        let s:artifact_winid = a:winid
+    endif
+endfunction
+
+
+function! s:GetSiblingViewerWinid(kind)
+    if a:kind ==# 'plot'
+        return get(s:, 'artifact_winid', -1)
+    endif
+    return get(s:, 'plot_winid', -1)
+endfunction
+
+
+" Detect whether a window currently hosts the requested managed viewer type.
+function! s:IsManagedViewerWindow(kind, winid)
+    if ! s:IsLiveWindow(a:winid) || s:IsMainWindow(a:winid)
+        return 0
+    endif
+    let l:bufname = bufname(winbufnr(win_id2win(a:winid)))
+    return l:bufname =~# s:GetManagedViewerPattern(a:kind)
+endfunction
+
+
+" Detect whether a window can serve as the shared viewer column.
+function! s:IsReusableViewerColumnWindow(winid)
+    if ! s:IsLiveWindow(a:winid) || s:IsMainWindow(a:winid)
+        return 0
+    endif
+    let l:bufname = bufname(winbufnr(win_id2win(a:winid)))
+    if empty(l:bufname)
+        return 1
+    endif
+    if l:bufname =~# s:GetManagedViewerPattern('plot') || l:bufname =~# s:GetManagedViewerPattern('artifact')
+        return 1
+    endif
+    return getbufvar(winbufnr(win_id2win(a:winid)), '&modified') ==# 0 && getbufvar(winbufnr(win_id2win(a:winid)), '&buftype') ==# 'nofile'
+endfunction
+
+
+" Resolve the active plot or artifact viewer window from live windows.
+function! s:ResolveViewerWinid(kind)
+    let l:stored_winid = s:GetViewerWinid(a:kind)
+    if s:IsManagedViewerWindow(a:kind, l:stored_winid)
+        return l:stored_winid
+    endif
+    for l:w in range(1, winnr('$'))
+        let l:winid = win_getid(l:w)
+        if s:IsManagedViewerWindow(a:kind, l:winid)
+            call s:SetViewerWinid(a:kind, l:winid)
+            return l:winid
         endif
-        return s:plot_winid
+    endfor
+    return -1
+endfunction
+
+
+" Open or reuse a scratch viewer buffer without echoing rename messages.
+function! s:OpenViewerBuffer(bufname)
+    if bufexists(a:bufname)
+        silent execute 'buffer ' . fnameescape(a:bufname)
+    else
+        silent execute 'enew'
+        silent execute 'file ' . fnameescape(a:bufname)
+    endif
+endfunction
+
+
+" Ensure the shared viewer column exists opposite the MLflow sidebar.
+function! s:EnsureViewerColumnWindow()
+    let l:plot_winid = s:ResolveViewerWinid('plot')
+    if l:plot_winid > 0
+        return l:plot_winid
+    endif
+    let l:artifact_winid = s:ResolveViewerWinid('artifact')
+    if l:artifact_winid > 0
+        return l:artifact_winid
+    endif
+    let l:stored_winid = get(s:, 'viewer_column_winid', -1)
+    if s:IsReusableViewerColumnWindow(l:stored_winid)
+        return l:stored_winid
+    endif
+    for l:w in range(1, winnr('$'))
+        let l:winid = win_getid(l:w)
+        if s:IsReusableViewerColumnWindow(l:winid)
+            let s:viewer_column_winid = l:winid
+            return l:winid
+        endif
+    endfor
+    let l:main_winid = exists('s:mlflow_winid') ? s:mlflow_winid : win_getid()
+    call win_gotoid(l:main_winid)
+    execute s:GetViewerSplitCmd() . ' new'
+    let s:viewer_column_winid = win_getid()
+    return s:viewer_column_winid
+endfunction
+
+
+" Resize stacked plot/artifact panes according to the configured split percent.
+function! s:ResizeViewerPanes()
+    let l:plot_winid = s:ResolveViewerWinid('plot')
+    let l:artifact_winid = s:ResolveViewerWinid('artifact')
+    if l:plot_winid > 0 && l:artifact_winid > 0
+        let l:total_height = winheight(win_id2win(l:plot_winid)) + winheight(win_id2win(l:artifact_winid))
+        let l:plot_height = max([1, float2nr(l:total_height * g:vim_mlflow_plotpane_pct / 100.0)])
+        call win_gotoid(l:plot_winid)
+        execute 'resize ' . l:plot_height
+        let s:viewer_column_winid = l:plot_winid
+    elseif l:plot_winid > 0
+        let s:viewer_column_winid = l:plot_winid
+    elseif l:artifact_winid > 0
+        let s:viewer_column_winid = l:artifact_winid
+    endif
+endfunction
+
+
+" Ensure the requested plot or artifact viewer pane exists and is focused.
+function! s:EnsureViewerWindow(kind, bufname)
+    let l:target_winid = s:ResolveViewerWinid(a:kind)
+    if l:target_winid > 0 && win_gotoid(l:target_winid)
+        call s:OpenViewerBuffer(a:bufname)
+        call s:ResizeViewerPanes()
+        return l:target_winid
     endif
 
-    let l:split_cmd = g:vim_mlflow_vside ==# 'left' ? 'vert botright' : 'vert topleft'
-    execute l:split_cmd . ' new'
-    execute 'file ' . fnameescape(a:bufname)
-    let s:plot_winid = win_getid()
-    return s:plot_winid
+    let l:sibling_kind = a:kind ==# 'plot' ? 'artifact' : 'plot'
+    let l:sibling_winid = s:ResolveViewerWinid(l:sibling_kind)
+    if l:sibling_winid > 0 && win_gotoid(l:sibling_winid)
+        if a:kind ==# 'plot'
+            leftabove split
+        else
+            rightbelow split
+        endif
+        let l:new_winid = win_getid()
+        call s:SetViewerWinid(a:kind, l:new_winid)
+        call s:OpenViewerBuffer(a:bufname)
+        call s:ResizeViewerPanes()
+        return l:new_winid
+    endif
+
+    let l:column_winid = s:EnsureViewerColumnWindow()
+    call win_gotoid(l:column_winid)
+    call s:SetViewerWinid(a:kind, l:column_winid)
+    call s:OpenViewerBuffer(a:bufname)
+    let s:viewer_column_winid = l:column_winid
+    call s:ResizeViewerPanes()
+    return l:column_winid
+endfunction
+
+
+function! s:EnsurePlotWindow(bufname)
+    let l:target_winid = s:EnsureViewerWindow('plot', a:bufname)
+    if l:target_winid > 0 && win_gotoid(l:target_winid)
+        if bufexists(a:bufname)
+            silent execute 'buffer ' . fnameescape(a:bufname)
+        endif
+        return l:target_winid
+    endif
+    return -1
 endfunction
 
 
@@ -165,7 +353,7 @@ endfunction
 function! s:OpenMetricPlotBuffer(title, lines)
     let l:bufname = s:GetPlotBufferName()
     let l:current_winid = win_getid()
-    let l:winid = s:EnsurePlotWindow(l:bufname)
+    let l:winid = s:EnsureViewerWindow('plot', l:bufname)
     call win_gotoid(l:winid)
     call s:PopulatePlotBuffer(a:title, a:lines)
     " widen window if needed for plot width + margins
@@ -176,6 +364,7 @@ endfunction
 
 
 function! RunMLflow()
+    let l:origin_winid = win_getid()
     let s:debuglines = []
     let s:current_exptid = ''  " empty string means show '1st expt'
     let s:current_runid = ''   " empty string means show '1st run'
@@ -218,13 +407,19 @@ function! RunMLflow()
         " Focus the existing window
         execute bufwinnr(g:vim_mlflow_buffername) . 'wincmd w'
     endif
+    let s:mlflow_winid = win_getid()
+    if s:IsLiveWindow(l:origin_winid) && l:origin_winid !=# s:mlflow_winid
+        let s:viewer_column_winid = l:origin_winid
+    endif
   
     " Set buffer properties: no line#s, don't prompt to save
     set nonumber
     set buftype=nofile
+    setlocal noswapfile
+    setlocal nowrap
   
     " Initial query/draw of MLflow content
-    call RefreshMLflowBuffer(1)
+    call RefreshMLflowBuffer(1, 0, 1)
     normal! 1G
   
     " Map certain key input to vim-mlflow features within buffer
@@ -232,7 +427,7 @@ function! RunMLflow()
     nmap <buffer>  <CR>  :call MLflowSelect()<CR>
     nmap <buffer>  <space>  :call MarkRun()<CR>
     nmap <buffer>  o     :call MLflowSelect()<CR>
-    nmap <buffer>  r     :call RefreshMLflowBuffer(0, 1)<CR>
+    nmap <buffer>  r     :call RefreshMLflowBuffer(0, 1, 1)<CR>
     nmap <buffer>  R     :call OpenRunsWindow()<CR>
     nmap <buffer>  <C-p> :call ToggleMLParamsDisplay()<CR>
     nmap <buffer>  <C-e> :call ToggleMLMetricsDisplay()<CR>
@@ -268,6 +463,8 @@ function! OpenRunsWindow()
     " Set buffer properties: no line#s, don't prompt to save
     set nonumber
     set buftype=nofile
+    setlocal noswapfile
+    setlocal nowrap
   
     " Initial query/draw of MLflow content
     call RefreshRunsBuffer()
@@ -279,7 +476,7 @@ function! OpenRunsWindow()
     nmap <buffer>  .     :call CollapseColumn()<CR>
     nmap <buffer>  x     :call RemoveMarkedRunViaCurpos()<CR>
     " nmap <buffer>  <C-h> :call HideColumn()<CR>
-    nmap <buffer>  <C-u> :call UnhideAll()<CR>
+    nmap <buffer>  u     :call ConfirmUnhideAll()<CR>
     nmap <buffer>  <C-p> :call ToggleRunsParamsDisplay()<CR>
     nmap <buffer>  <C-e> :call ToggleRunsMetricsDisplay()<CR>
     nmap <buffer>  <C-t> :call ToggleRunsTagsDisplay()<CR>
@@ -336,9 +533,11 @@ endfunction
 
 " Requery MLflow content and update buffer
 function! RefreshMLflowBuffer(doassign, ...)
-    " Optional args: [cursor_position], [reset_artifacts_flag]
+    " Optional args: [cursor_position], [reset_artifacts_flag], [force_refresh_flag]
     let l:curpos = getpos('.')
+    let l:view = winsaveview()
     let l:reset_artifacts = 0
+    let l:force_refresh = 0
     " Allow callers to pass cursor position and/or reset flag via a:000.
     if len(a:000) >= 1
         if type(a:000[0]) ==# type([])
@@ -346,8 +545,14 @@ function! RefreshMLflowBuffer(doassign, ...)
             if len(a:000) >= 2
                 let l:reset_artifacts = a:000[1]
             endif
+            if len(a:000) >= 3
+                let l:force_refresh = a:000[2]
+            endif
         else
             let l:reset_artifacts = a:000[0]
+            if len(a:000) >= 2
+                let l:force_refresh = a:000[1]
+            endif
         endif
     endif
     if l:reset_artifacts
@@ -363,10 +568,10 @@ function! RefreshMLflowBuffer(doassign, ...)
     normal! gg"_dG
   
     " Insert the results.
-    let l:view = winsaveview()
+    let g:vim_mlflow_force_refresh = l:force_refresh
     let l:results = MainPageMLflow()
+    unlet g:vim_mlflow_force_refresh
     call append(0, l:results)
-    call winrestview(l:view)
  
     " Colorize the contents
     call ColorizeMLflowBuffer()
@@ -376,8 +581,7 @@ function! RefreshMLflowBuffer(doassign, ...)
         let s:artifact_lineinfo = {}
     endif
  
-    " Replace the cursor position
-    call setpos('.', l:curpos)
+    call winrestview(l:view)
  
     redraw
 endfunction
@@ -389,21 +593,19 @@ function! RefreshRunsBuffer()
     if ! exists(l:curpos)
         let l:curpos = getpos('.')
     endif
+    let l:view = winsaveview()
   
     " Clear out existing content
     normal! gg"_dG
   
     " Insert the results.
-    let l:view = winsaveview()
     let l:results = RunsPageMLflow()
     call append(0, l:results)
-    call winrestview(l:view)
   
     " Colorize the contents
     call ColorizeRunsBuffer()
   
-    " Replace the cursor position
-    call setpos('.', l:curpos)
+    call winrestview(l:view)
   
     redraw
 endfunction
@@ -453,7 +655,7 @@ function! CycleActiveDeletedAll()
     " which correspond to states Active, Deleted, and All
     " for both Experiments and Runs simultaneously:
     let g:vim_mlflow_viewtype = (g:vim_mlflow_viewtype%3)+1
-    call RefreshMLflowBuffer(1)
+    call RefreshMLflowBuffer(1, 0, 1)
 endfunction
 
 
@@ -562,6 +764,26 @@ function! UnhideAll()
     let s:hiddencols_list = []
     let s:movedcols_list = []
     call RefreshRunsBuffer()
+endfunction
+
+
+" Wrap UnhideAll() with a confirmation prompt in the runs buffer.
+function! ConfirmUnhideAll()
+    if empty(s:collapsedcols_list) && empty(s:hiddencols_list) && empty(s:movedcols_list)
+        echo 'vim-mlflow: no column layout changes to undo.'
+        return
+    endif
+    if exists('*confirm')
+        let l:choice = confirm(
+              \ 'Undo all column layout changes?',
+              \ "&Yes\n&No",
+              \ 2
+              \ )
+        if l:choice !=# 1
+            return
+        endif
+    endif
+    call UnhideAll()
 endfunction
 
 
@@ -704,7 +926,7 @@ function! RunsListHelpMsg()
         \'" R  :  requery marked-runs display',
         \'" x  :  remove run under cursor from list',
         \'" .  :  collapse/open current column',
-        \'" ^u :  unhide/undo all column changes',
+        \'" u  :  undo all column changes',
         \'" ^p :  toggle display of parameters',
         \'" ^e :  toggle display of metrics',
         \'" ^t :  toggle display of tags',
@@ -780,7 +1002,11 @@ except ModuleNotFoundError as exc:
     print("Please see vim-mlflow's readme file for more details.")
     print("Underlying import error:", exc)
     raise
-mlflowmain = vim_mlflow.getMainPageMLflow(vim.eval('g:mlflow_tracking_uri'))
+force_refresh = vim.eval("get(g:, 'vim_mlflow_force_refresh', 0)") == '1'
+mlflowmain = vim_mlflow.getMainPageMLflow(
+    vim.eval('g:mlflow_tracking_uri'),
+    force_refresh=force_refresh,
+)
 EOF
 
 let g:vim_mlflow_plugin_loaded = 1
@@ -1160,39 +1386,86 @@ endfunction
 
 function! s:ShowArtifactBuffer(path, localpath)
     let l:current_win = win_getid()
-    let l:bufname = 'artifact://' . a:path
-    let l:winnr = bufwinnr(l:bufname)
-    if l:winnr ==# -1
-        let l:scratch = s:FindScratchWindow()
-        if l:scratch !=# -1
-            call win_gotoid(l:scratch)
-            execute 'enew'
-        else
-            if g:vim_mlflow_vside ==# 'left'
-                execute 'vert botright split'
-            else
-                execute 'vert topleft split'
-            endif
-        endif
-    else
-        execute l:winnr . 'wincmd w'
-        setlocal modifiable
-    endif
-    execute 'file ' . fnameescape(l:bufname)
+    let l:runid = exists('s:current_runid') ? s:current_runid : 'unknown'
+    let l:bufname = 'artifact://' . l:runid . '/' . a:path
+    let l:winid = s:EnsureViewerWindow('artifact', l:bufname)
+    call win_gotoid(l:winid)
+    setlocal modifiable
     setlocal buftype=nofile
     setlocal bufhidden=wipe
     setlocal noswapfile
+    setlocal nowrap
     setlocal modifiable
-    let l:content = readfile(a:localpath)
-    if empty(l:content)
-        let l:content = ['']
-    endif
+    let l:content = s:GetArtifactDisplayLines(a:path, a:localpath)
     silent keepjumps %d
     call setline(1, l:content)
     call s:SetBufferFiletype(a:path)
     setlocal nomodifiable
     call cursor(1, 1)
     call win_gotoid(l:current_win)
+endfunction
+
+
+" Build display lines for an artifact buffer, pretty-printing JSON when possible.
+function! s:GetArtifactDisplayLines(path, localpath)
+python3 << EOF
+import os, sys, site
+from os.path import normpath, join
+import vim
+
+def _augment_sys_path():
+    def _add_site_dir(path):
+        if not os.path.isdir(path):
+            return
+        before = list(sys.path)
+        site.addsitedir(path)
+        new_entries = [p for p in sys.path if p not in before]
+        for entry in reversed(new_entries):
+            idx = sys.path.index(entry)
+            sys.path.insert(0, sys.path.pop(idx))
+
+    env_roots = []
+    for key in ('VIRTUAL_ENV', 'CONDA_PREFIX', 'PYENV_VIRTUAL_ENV'):
+        value = os.environ.get(key)
+        if value and value not in env_roots:
+            env_roots.append(value)
+    for root in env_roots:
+        for lib_name in ('lib', 'Lib', 'lib64'):
+            lib_dir = os.path.join(root, lib_name)
+            if not os.path.isdir(lib_dir):
+                continue
+            py_version_dir = 'python{}.{}'.format(sys.version_info.major, sys.version_info.minor)
+            candidate_dirs = [os.path.join(lib_dir, py_version_dir, 'site-packages')]
+            for entry in os.listdir(lib_dir):
+                if entry.startswith('python') and entry != py_version_dir:
+                    candidate_dirs.append(os.path.join(lib_dir, entry, 'site-packages'))
+            for path in candidate_dirs:
+                _add_site_dir(path)
+
+_augment_sys_path()
+
+plugin_root_dir = vim.eval('s:plugin_root_dir')
+python_root_dir = normpath(join(plugin_root_dir, '..', 'python'))
+if python_root_dir not in sys.path:
+    sys.path.insert(0, python_root_dir)
+
+import vim_mlflow
+
+artifact_path = vim.eval('a:path')
+local_path = vim.eval('a:localpath')
+vim.vars['vim_mlflow_artifact_lines'] = vim_mlflow.read_artifact_display_lines(
+    artifact_path,
+    local_path,
+)
+EOF
+    let l:content = get(g:, 'vim_mlflow_artifact_lines', [])
+    if exists('g:vim_mlflow_artifact_lines')
+        unlet g:vim_mlflow_artifact_lines
+    endif
+    if empty(l:content)
+        return ['']
+    endif
+    return l:content
 endfunction
 
 
@@ -1209,19 +1482,4 @@ function! s:SetBufferFiletype(path)
     else
         setfiletype text
     endif
-endfunction
-
-
-function! s:FindScratchWindow()
-    for l:w in range(1, winnr('$'))
-        let l:buf = winbufnr(l:w)
-        if l:buf <= 0
-            continue
-        endif
-        let l:name = bufname(l:buf)
-        if (empty(l:name) || l:name =~? '^artifact://') && getbufvar(l:buf, '&buftype') ==# ''
-            return win_getid(l:w)
-        endif
-    endfor
-    return -1
 endfunction

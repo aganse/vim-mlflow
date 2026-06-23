@@ -18,11 +18,13 @@ def make_run(
     start_time_ms: Optional[int],
     end_time_ms: Optional[int],
     *,
+    experiment_id: str = "99",
     status: str = "FINISHED",
     lifecycle_stage: str = "active",
     user_id: str = "user",
     run_name: str = "",
     tags: Optional[Dict[str, str]] = None,
+    params: Optional[Dict[str, str]] = None,
     metrics: Optional[Dict[str, float]] = None,
 ) -> SimpleNamespace:
     """Return a minimal stand-in for mlflow.entities.Run."""
@@ -36,6 +38,7 @@ def make_run(
 
     info = SimpleNamespace(
         run_id=run_id,
+        experiment_id=str(experiment_id),
         start_time=start_time_ms,
         end_time=end_time_ms,
         status=status,
@@ -45,6 +48,7 @@ def make_run(
     )
     data = SimpleNamespace(
         tags=merged_tags,
+        params=params or {},
         metrics=run_metrics,
     )
     return SimpleNamespace(info=info, data=data)

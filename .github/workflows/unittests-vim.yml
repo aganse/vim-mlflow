@@ -12,10 +12,16 @@ jobs:
       - name: Install Vim and Neovim
         run: |
           sudo apt-get update
-          sudo apt-get install -y vim neovim
+          sudo apt-get install -y vim neovim python3-venv
+      - name: Install Python dependencies
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -r dev-requirements.txt
       - name: Run Vimscript tests (Neovim then Vim)
         run: |
           set +e
+          export VIRTUAL_ENV="$PWD/.venv"
+          export PATH="$VIRTUAL_ENV/bin:$PATH"
           rm -f nvim-test.log vim-test.log
 
           echo

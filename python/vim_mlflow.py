@@ -3,7 +3,6 @@ import io
 import json
 import math
 import os
-from datetime import datetime, timezone
 from urllib.request import urlopen
 
 import mlflow
@@ -11,7 +10,7 @@ import vim
 from mlflow.entities import ViewType
 from mlflow.tracking import MlflowClient
 
-from vim_mlflow_utils import format_run_duration
+from vim_mlflow_cache import get_session
 
 VIEWTYPE_MAP = {
     1: ViewType.ACTIVE_ONLY,
@@ -26,16 +25,36 @@ VIEWTYPE_LABELS = {
 }
 
 
-def getMLflowExpts(mlflow_tracking_uri):
+def _get_cache_mode():
+    """Return the configured run-summary cache mode."""
+    cache_mode = vim.eval("get(g:, 'vim_mlflow_runs_cache_mode', 'selected_expt')")
+    if cache_mode not in {"selected_expt", "all_expts"}:
+        return "selected_expt"
+    return cache_mode
+
+
+def _get_session(mlflow_tracking_uri):
+    """Return the active cache session for the current Vim settings."""
+    view_idx = int(vim.eval("g:vim_mlflow_viewtype"))
+    view_type = VIEWTYPE_MAP.get(view_idx, ViewType.ACTIVE_ONLY)
+    timeout = float(vim.eval("g:vim_mlflow_timeout"))
+    return get_session(mlflow_tracking_uri, view_type, _get_cache_mode(), timeout)
+
+
+def _vim_flag(expression):
+    """Interpret a Vimscript boolean-like value as a Python bool."""
+    return str(vim.eval(expression)) == "1"
+
+
+def getMLflowExpts(session, force_refresh=False):
+    """Render the experiment list from cached MLflow data."""
     try:
         lifecycles = {"active": "A", "deleted": "D"}
-        client = MlflowClient(tracking_uri=mlflow_tracking_uri)
         view_idx = int(vim.eval("g:vim_mlflow_viewtype"))
-        view_type = VIEWTYPE_MAP.get(view_idx, ViewType.ACTIVE_ONLY)
-        expts = client.search_experiments(view_type=view_type)
+        expts_df = session.get_experiments_df(force_refresh=force_refresh)
 
         output_lines = []
-        num_expts_viewtype = len(expts)
+        num_expts_viewtype = len(expts_df.index)
         vim.command("let s:num_expts='" + str(num_expts_viewtype) + "'")
         output_lines.append(
             f"{vim.eval('s:num_expts')} {VIEWTYPE_LABELS.get(view_idx, VIEWTYPE_LABELS[1])} "
@@ -49,21 +68,20 @@ def getMLflowExpts(mlflow_tracking_uri):
         else:
             scrollicon = ""
         output_lines.append(scrollicon + vim.eval("g:vim_mlflow_icon_vdivider") * 30)
-        expts = sorted(expts, key=lambda e: int(e.experiment_id), reverse=True)
         beginexpt_idx = int(vim.eval("s:expts_first_idx"))
         endexpt_idx = int(vim.eval("s:expts_first_idx")) + int(
             vim.eval("g:vim_mlflow_expts_length")
         )
-        for expt in expts[beginexpt_idx:endexpt_idx]:
+        visible_expts = expts_df.iloc[beginexpt_idx:endexpt_idx]
+        view_type = session.view_type
+        for _, expt in visible_expts.iterrows():
             if view_type == ViewType.ALL:
                 stage_letter = lifecycles.get(
-                    expt.lifecycle_stage, expt.lifecycle_stage[:1].upper()
+                    expt["lifecycle_stage"], expt["lifecycle_stage"][:1].upper()
                 )
-                output_lines.append(
-                    f"#{expt.experiment_id}: {stage_letter} {expt.name}"
-                )
+                output_lines.append(f"#{expt['experiment_id']}: {stage_letter} {expt['name']}")
             else:
-                output_lines.append(f"#{expt.experiment_id}: {expt.name}")
+                output_lines.append(f"#{expt['experiment_id']}: {expt['name']}")
         if vim.eval("g:vim_mlflow_show_scrollicons"):
             if int(vim.eval("s:expts_first_idx")) == int(
                 vim.eval("s:num_expts-min([g:vim_mlflow_expts_length, s:num_expts])")
@@ -74,7 +92,7 @@ def getMLflowExpts(mlflow_tracking_uri):
         else:
             scrollicon = ""
         output_lines.append(scrollicon)
-        return output_lines, [expt.experiment_id for expt in expts]
+        return output_lines, expts_df["experiment_id"].tolist()
 
     except ModuleNotFoundError:
         print(
@@ -82,16 +100,15 @@ def getMLflowExpts(mlflow_tracking_uri):
         )
 
 
-def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
+def getRunsListForExpt(session, current_exptid, force_refresh=False):
+    """Render the run list for one experiment from cached summaries."""
     try:
         lifecycles = {"active": "A", "deleted": "D"}
-        client = MlflowClient(tracking_uri=mlflow_tracking_uri)
         view_idx = int(vim.eval("g:vim_mlflow_viewtype"))
-        view_type = VIEWTYPE_MAP.get(view_idx, ViewType.ACTIVE_ONLY)
-        runs = client.search_runs([str(current_exptid)], run_view_type=view_type)
+        runs_df = session.get_runs_df(str(current_exptid), force_refresh=force_refresh)
 
         output_lines = []
-        num_runs_viewtype = len(runs)
+        num_runs_viewtype = len(runs_df.index)
         vim.command("let s:num_runs='" + str(num_runs_viewtype) + "'")
         output_lines.append(
             f"{vim.eval('s:num_runs')} {VIEWTYPE_LABELS.get(view_idx, VIEWTYPE_LABELS[1])} "
@@ -105,47 +122,32 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
         else:
             scrollicon = ""
         output_lines.append(scrollicon + vim.eval("g:vim_mlflow_icon_vdivider") * 30)
-        runs = sorted(runs, key=lambda r: r.info.start_time, reverse=True)
         beginrun_idx = int(vim.eval("s:runs_first_idx"))
         endrun_idx = int(vim.eval("s:runs_first_idx")) + int(
             vim.eval("g:vim_mlflow_runs_length")
         )
         visible_rows = []
-        for run in runs[beginrun_idx:endrun_idx]:
-            if run.info.start_time:
-                st = datetime.fromtimestamp(
-                    run.info.start_time / 1e3, tz=timezone.utc
-                ).strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                )
-            else:
-                st = "N/A"
+        visible_runs = runs_df.iloc[beginrun_idx:endrun_idx]
+        view_type = session.view_type
+        for _, run in visible_runs.iterrows():
             mark = " "
-            if run.info.run_id[:5] in vim.eval("s:markruns_list"):
+            if run["run_id_short"] in vim.eval("s:markruns_list"):
                 mark = vim.eval("g:vim_mlflow_icon_markrun")
-            runtags = run.data.tags
-            runname = run.info.run_name if "mlflow.runName" in runtags else ""
-            status = run.info.status or "-"
-            user = runtags.get("mlflow.user") or run.info.user_id or "-"
             stage_letter = ""
             if view_type == ViewType.ALL:
                 stage_letter = lifecycles.get(
-                    run.info.lifecycle_stage, run.info.lifecycle_stage[:1].upper()
+                    run["lifecycle_stage"], run["lifecycle_stage"][:1].upper()
                 )
-            if run.info.start_time and run.info.end_time:
-                duration_seconds = (run.info.end_time - run.info.start_time) / 1e3
-            else:
-                duration_seconds = None
             visible_rows.append(
                 {
                     "mark": mark,
-                    "run_id": run.info.run_id[:5],
+                    "run_id": run["run_id_short"],
                     "stage": stage_letter,
-                    "start": st,
-                    "status": status,
-                    "duration": format_run_duration(duration_seconds),
-                    "user": user,
-                    "name": runname,
+                    "start": run["start_time"],
+                    "status": run["status"],
+                    "duration": run["duration"],
+                    "user": run["user"],
+                    "name": run["run_name"],
                 }
             )
 
@@ -175,7 +177,7 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
         else:
             scrollicon = ""
         output_lines.append(scrollicon)
-        return output_lines, [run.info.run_id for run in runs]
+        return output_lines, runs_df["run_id"].tolist()
 
     except ModuleNotFoundError:
         print(
@@ -183,10 +185,11 @@ def getRunsListForExpt(mlflow_tracking_uri, current_exptid):
         )
 
 
-def getMetricsListForRun(mlflow_tracking_uri, current_runid, show=True, header_icon=""):
+def getMetricsListForRun(session, current_runid, show=True, header_icon="", force_refresh=False):
+    """Render the metrics section for one run and cache metric histories."""
     try:
-        client = MlflowClient(tracking_uri=mlflow_tracking_uri)
-        run = client.get_run(current_runid)
+        run = session.get_run_detail(current_runid, force_refresh=force_refresh)
+        metrics = run["data"]["metrics"]
 
         metric_histories = {}
         output_lines = []
@@ -196,16 +199,11 @@ def getMetricsListForRun(mlflow_tracking_uri, current_runid, show=True, header_i
         output_lines.append(f"{prefix}Metrics in run #{current_runid[:5]}:")
         output_lines.append(divider)
         if show:
-            for k, v in run.data.metrics.items():
-                history = client.get_metric_history(current_runid, k)
-                metric_histories[k] = [
-                    {
-                        "step": m.step,
-                        "timestamp": m.timestamp,
-                        "value": m.value,
-                    }
-                    for m in history
-                ]
+            for k, v in metrics.items():
+                history = session.get_metric_history(
+                    current_runid, k, force_refresh=force_refresh
+                )
+                metric_histories[k] = history
                 suffix = ""
                 if len(history) > 1:
                     suffix = "  [final value; o to plot]"
@@ -218,9 +216,9 @@ def getMetricsListForRun(mlflow_tracking_uri, current_runid, show=True, header_i
         # Cache histories in a global dict so Vimscript can access them.
         vim.vars["vim_mlflow_metric_histories"] = {current_runid: metric_histories}
         vim.vars["vim_mlflow_current_runinfo"] = {
-            "run_id": run.info.run_id,
-            "run_name": run.info.run_name or "",
-            "experiment_id": run.info.experiment_id,
+            "run_id": run["info"]["run_id"],
+            "run_name": run["info"]["run_name"] or "",
+            "experiment_id": run["info"]["experiment_id"],
         }
         return output_lines, metric_offsets
 
@@ -230,10 +228,10 @@ def getMetricsListForRun(mlflow_tracking_uri, current_runid, show=True, header_i
         )
 
 
-def getParamsListForRun(mlflow_tracking_uri, current_runid, show=True, header_icon=""):
+def getParamsListForRun(session, current_runid, show=True, header_icon="", force_refresh=False):
+    """Render the params section for one run."""
     try:
-        client = MlflowClient(tracking_uri=mlflow_tracking_uri)
-        run = client.get_run(current_runid)
+        run = session.get_run_detail(current_runid, force_refresh=force_refresh)
 
         output_lines = []
         prefix = f"{header_icon} " if header_icon else ""
@@ -241,7 +239,7 @@ def getParamsListForRun(mlflow_tracking_uri, current_runid, show=True, header_ic
         output_lines.append(f"{prefix}Params in run #{current_runid[:5]}:")
         output_lines.append(divider)
         if show:
-            for k, v in run.data.params.items():
+            for k, v in run["data"]["params"].items():
                 output_lines.append(f"  {k}: {v}")
         output_lines.append("")
         return output_lines
@@ -252,10 +250,10 @@ def getParamsListForRun(mlflow_tracking_uri, current_runid, show=True, header_ic
         )
 
 
-def getTagsListForRun(mlflow_tracking_uri, current_runid, show=True, header_icon=""):
+def getTagsListForRun(session, current_runid, show=True, header_icon="", force_refresh=False):
+    """Render the tags section for one run."""
     try:
-        client = MlflowClient(tracking_uri=mlflow_tracking_uri)
-        run = client.get_run(current_runid)
+        run = session.get_run_detail(current_runid, force_refresh=force_refresh)
 
         output_lines = []
         prefix = f"{header_icon} " if header_icon else ""
@@ -263,7 +261,7 @@ def getTagsListForRun(mlflow_tracking_uri, current_runid, show=True, header_icon
         output_lines.append(f"{prefix}Tags in run #{current_runid[:5]}:")
         output_lines.append(divider)
         if show:
-            for k, v in run.data.tags.items():
+            for k, v in run["data"]["tags"].items():
                 output_lines.append(f"  {k}: {v}")
         output_lines.append("")
         return output_lines
@@ -275,6 +273,7 @@ def getTagsListForRun(mlflow_tracking_uri, current_runid, show=True, header_icon
 
 
 def _clean_metric_history(history):
+    """Normalize metric history points into plottable numeric entries."""
     cleaned = []
     for idx, point in enumerate(history):
         value = point.get("value")
@@ -298,6 +297,7 @@ def _clean_metric_history(history):
 
 
 def _downsample_points(points, target_len):
+    """Reduce plotted points to fit the target display width."""
     if len(points) <= target_len:
         return points
     ratio = len(points) / float(target_len)
@@ -317,6 +317,7 @@ def _downsample_points(points, target_len):
 
 
 def _collect_artifacts(client, run_id, path="", depth=0, max_depth=50):
+    """Collect an artifact tree for one run up to the requested depth."""
     nodes = []
     try:
         actual_path = path or None
@@ -342,6 +343,7 @@ def _collect_artifacts(client, run_id, path="", depth=0, max_depth=50):
 
 
 def _is_text_artifact(name):
+    """Return whether an artifact should be opened as inline text."""
     lowered = name.lower()
     if lowered == "mlmodel":
         return True
@@ -362,6 +364,7 @@ def _render_artifact_section(
     max_depth=3,
     header_icon=None,
 ):
+    """Render artifact tree lines plus metadata for clickable rows."""
     indent_unit = "  "
     prefix = f"{header_icon} " if header_icon else ""
     lines = [f"{prefix}Artifacts in run #{short_run_id}:", divider_char * 30]
@@ -407,6 +410,7 @@ def _render_artifact_section(
 
 
 def download_artifact_file(tracking_uri, run_id, artifact_path, target_dir):
+    """Download one artifact file for local viewing."""
     mlflow.set_tracking_uri(tracking_uri)
     client = MlflowClient()
     os.makedirs(target_dir, exist_ok=True)
@@ -421,9 +425,26 @@ def download_artifact_file(tracking_uri, run_id, artifact_path, target_dir):
     return local_path
 
 
+def read_artifact_display_lines(artifact_path, local_path):
+    """Return artifact lines for display, pretty-printing JSON when possible."""
+    if artifact_path.lower().endswith(".json"):
+        try:
+            with open(local_path, encoding="utf-8") as infile:
+                payload = json.load(infile)
+            rendered = json.dumps(payload, indent=2, ensure_ascii=False)
+            return rendered.splitlines() or [""]
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            pass
+
+    with open(local_path, encoding="utf-8", errors="replace") as infile:
+        content = infile.read().splitlines()
+    return content or [""]
+
+
 def render_metric_plot(
     run_id, metric_name, history, width, height, xaxis_mode, experiment_id, run_name
 ):
+    """Render an ASCII plot for one metric history."""
     experiment_id = str(experiment_id) if experiment_id else "-"
     run_name = str(run_name) if run_name else ""
     cleaned = _clean_metric_history(history)
@@ -528,7 +549,8 @@ def render_metric_plot(
     return lines, title
 
 
-def getMainPageMLflow(mlflow_tracking_uri):
+def getMainPageMLflow(mlflow_tracking_uri, force_refresh=False):
+    """Render the main MLflow sidebar from cached and lazy-loaded data."""
 
     out = []
     version = vim.eval("get(g:, 'vim_mlflow_version', 'dev')")
@@ -539,41 +561,50 @@ def getMainPageMLflow(mlflow_tracking_uri):
     vim.vars["vim_mlflow_artifact_lineinfo"] = {}
     vim.vars["vim_mlflow_metric_lines"] = []
     vim.vars["vim_mlflow_section_headers"] = []
-    if verifyTrackingUrl(
-        mlflow_tracking_uri, timeout=float(vim.eval("g:vim_mlflow_timeout"))
-    ):
-        text, exptids = getMLflowExpts(mlflow_tracking_uri)
+    session = _get_session(mlflow_tracking_uri)
+    if session.ensure_available(force_refresh=force_refresh):
+        text, exptids = getMLflowExpts(session, force_refresh=force_refresh)
         out.extend(text)
         out.append("")
-        if vim.eval("s:current_exptid") == "":
-            vim.command("let s:current_exptid='" + exptids[0] + "'")
-        text, runids = getRunsListForExpt(
-            mlflow_tracking_uri, vim.eval("s:current_exptid")
-        )
-        out.extend(text)
-        out.append("")
+        current_exptid = vim.eval("s:current_exptid")
+        if exptids and current_exptid not in exptids:
+            current_exptid = exptids[0]
+            vim.command("let s:current_exptid='" + current_exptid + "'")
+        elif current_exptid == "" and exptids:
+            current_exptid = exptids[0]
+            vim.command("let s:current_exptid='" + current_exptid + "'")
+
+        if current_exptid:
+            session.prime_runs_cache(current_exptid, force_refresh=force_refresh)
+            text, runids = getRunsListForExpt(session, current_exptid)
+            out.extend(text)
+            out.append("")
+        else:
+            runids = []
+
         if runids:
-            if vim.eval("s:current_runid") == "":
-                vim.command("let s:current_runid='" + runids[0] + "'")
-            elif len(vim.eval("s:current_runid")) == 5:
-                fullrunid = [
-                    runid
-                    for runid in runids
-                    if runid[:5] == vim.eval("s:current_runid")
-                ][0]
-                vim.command("let s:current_runid='" + fullrunid + "'")
+            current_run = vim.eval("s:current_runid")
+            if current_run == "":
+                current_run = runids[0]
+            elif len(current_run) == 5:
+                current_run = session.find_run_id(current_exptid, current_run)
+            elif current_run not in runids:
+                current_run = runids[0]
+            vim.command("let s:current_runid='" + current_run + "'")
+            if force_refresh:
+                session.get_run_detail(current_run, force_refresh=True)
+
             section_order = vim.eval("g:vim_mlflow_section_order")
             if not section_order:
                 section_order = ["params", "metrics", "tags", "artifacts"]
             states = {
-                "params": vim.eval("s:params_are_showing") == "1",
-                "metrics": vim.eval("s:metrics_are_showing") == "1",
-                "tags": vim.eval("s:tags_are_showing") == "1",
-                "artifacts": vim.eval("s:artifacts_are_showing") == "1",
+                "params": _vim_flag("s:params_are_showing"),
+                "metrics": _vim_flag("s:metrics_are_showing"),
+                "tags": _vim_flag("s:tags_are_showing"),
+                "artifacts": _vim_flag("s:artifacts_are_showing"),
             }
             open_icon = vim.eval("g:vim_mlflow_icon_scrolldown") or "v"
             closed_icon = vim.eval("g:vim_mlflow_icon_markrun") or ">"
-            current_run = vim.eval("s:current_runid")
             short_run = current_run[:5]
             section_header_entries = []
             metric_line_numbers = []
@@ -586,7 +617,7 @@ def getMainPageMLflow(mlflow_tracking_uri):
                 if section == "params":
                     out.extend(
                         getParamsListForRun(
-                            mlflow_tracking_uri,
+                            session,
                             current_run,
                             show=show,
                             header_icon=header_icon,
@@ -594,7 +625,7 @@ def getMainPageMLflow(mlflow_tracking_uri):
                     )
                 elif section == "metrics":
                     metrics_output, offsets = getMetricsListForRun(
-                        mlflow_tracking_uri,
+                        session,
                         current_run,
                         show=show,
                         header_icon=header_icon,
@@ -607,7 +638,7 @@ def getMainPageMLflow(mlflow_tracking_uri):
                 elif section == "tags":
                     out.extend(
                         getTagsListForRun(
-                            mlflow_tracking_uri,
+                            session,
                             current_run,
                             show=show,
                             header_icon=header_icon,
@@ -623,9 +654,10 @@ def getMainPageMLflow(mlflow_tracking_uri):
                             "json_encode(get(g:, 'vim_mlflow_artifact_expanded', {}))"
                         )
                         expanded = json.loads(expanded_json)
-                        client = MlflowClient(tracking_uri=mlflow_tracking_uri)
-                        tree = _collect_artifacts(
-                            client, current_run, max_depth=max_depth
+                        tree = session.get_artifact_tree(
+                            current_run,
+                            max_depth,
+                            _collect_artifacts,
                         )
                         artifact_lines, artifact_info = _render_artifact_section(
                             short_run,
@@ -655,6 +687,7 @@ def getMainPageMLflow(mlflow_tracking_uri):
             vim.vars["vim_mlflow_section_headers"] = section_header_entries
             vim.vars["vim_mlflow_metric_lines"] = metric_line_numbers
         else:
+            vim.command("let s:current_runid=''")
             vim.vars["vim_mlflow_artifact_lineinfo"] = {}
             vim.vars["vim_mlflow_section_headers"] = []
             vim.vars["vim_mlflow_metric_lines"] = []
@@ -683,10 +716,6 @@ def verifyTrackingUrl(url, timeout=1.0):
         raise RuntimeError("Incorrect and possibly insecure protocol in url")
 
     try:
-        if urlopen(url, timeout=timeout).getcode() == 200:
-            out = True
-    except Exception as exc:  # fallback if you tr
-        print("Unexpected failure: %s", exc)
-        out = False
-
-    return out
+        return urlopen(url, timeout=timeout).getcode() == 200
+    except Exception:
+        return False

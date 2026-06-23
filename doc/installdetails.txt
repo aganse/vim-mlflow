@@ -11,8 +11,8 @@
 - `python3 -m venv .venv`
 - `source .venv/bin/activate  # syntax for linux/mac`
 
-#### 3. Install the `mlflow` Python package (and also `pynvim` for Nvim):
-- `pip install mlflow` (in both Vim and NVim)
+#### 3. Install the required Python packages (`mlflow`, `pandas`, and `pynvim` for Nvim):
+- `pip install mlflow pandas` (in both Vim and NVim)
 - In NVim you also need this package in your env to support the python:
   `pip install pynvim`
 
@@ -32,6 +32,5 @@
 - The Configuration section has quite a list of settings (colors, characters,
   sizing, etc) that can be customized.
   
-- For NVim you may need to set `setlocal nowrap` in your resource file - see
-  last Troubleshooting tip below regarding line-wrap default in NVim affecting
-  content layout.
+- vim-mlflow manages `nowrap` itself for its scratch buffers, so no extra NVim
+  line-wrap setting should normally be needed.
