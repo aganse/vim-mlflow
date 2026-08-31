@@ -3,6 +3,7 @@ import io
 import json
 import math
 import os
+from urllib.parse import urlencode
 from urllib.request import urlopen
 
 import mlflow
@@ -411,15 +412,17 @@ def _render_artifact_section(
 
 def download_artifact_file(tracking_uri, run_id, artifact_path, target_dir):
     """Download one artifact file for local viewing."""
-    mlflow.set_tracking_uri(tracking_uri)
-    client = MlflowClient()
+    if not tracking_uri.startswith(("http://", "https://")):
+        raise ValueError(f"tracking_uri must be http:// or https://, got: {tracking_uri!r}")
     os.makedirs(target_dir, exist_ok=True)
-    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(
-        io.StringIO()
-    ):
-        local_path = client.download_artifacts(
-            run_id, artifact_path, dst_path=target_dir
-        )
+    params = urlencode({"run_uuid": run_id, "path": artifact_path})
+    url = f"{tracking_uri.rstrip('/')}/get-artifact?{params}"
+    local_path = os.path.join(target_dir, run_id, *artifact_path.split("/"))
+    os.makedirs(os.path.dirname(local_path), exist_ok=True)
+    with urlopen(url) as response:
+        content = response.read()
+    with open(local_path, "wb") as f:
+        f.write(content)
     if os.path.isdir(local_path):
         raise IsADirectoryError(f"{artifact_path} is a directory")
     return local_path
