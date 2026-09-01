@@ -1,15 +1,11 @@
-import contextlib
-import io
 import json
 import math
 import os
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
-import mlflow
 import vim
 from mlflow.entities import ViewType
-from mlflow.tracking import MlflowClient
 
 from vim_mlflow_cache import get_session
 
