@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.2] - 2026-08-31
+
+### Fixed
+
+- Fixed artifact listing to work with S3 and remote stores
+- Fixed artifact download to work with S3 and remote stores
+- Cleaned up unused imports and a flake8 workflow failure
+
+
+
 ## [1.1.0] - 2026-06-20
 
 ### Added
