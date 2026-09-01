@@ -317,27 +317,29 @@ def _downsample_points(points, target_len):
     return downsampled
 
 
-def _collect_artifacts(client, run_id, path="", depth=0, max_depth=50):
+def _collect_artifacts(tracking_uri, run_id, path="", depth=0, max_depth=50):
     """Collect an artifact tree for one run up to the requested depth."""
     nodes = []
     try:
-        actual_path = path or None
-        if actual_path is None:
-            artifacts = client.list_artifacts(run_id)
-        else:
-            artifacts = client.list_artifacts(run_id, actual_path)
+        params = {"run_id": run_id}
+        if path:
+            params["path"] = path
+        url = f"{tracking_uri.rstrip('/')}/api/2.0/mlflow/artifacts/list?{urlencode(params)}"
+        with urlopen(url) as response:
+            data = json.loads(response.read())
+        artifacts = data.get("files", [])
     except Exception:
         return nodes
-    for item in sorted(artifacts, key=lambda a: a.path):
+    for item in sorted(artifacts, key=lambda a: a["path"]):
         node = {
-            "path": item.path,
-            "name": item.path.rsplit("/", 1)[-1],
-            "is_dir": item.is_dir,
+            "path": item["path"],
+            "name": item["path"].rsplit("/", 1)[-1],
+            "is_dir": item.get("is_dir", False),
             "children": [],
         }
-        if item.is_dir and depth < max_depth:
+        if item.get("is_dir") and depth < max_depth:
             node["children"] = _collect_artifacts(
-                client, run_id, item.path, depth + 1, max_depth
+                tracking_uri, run_id, item["path"], depth + 1, max_depth
             )
         nodes.append(node)
     return nodes
