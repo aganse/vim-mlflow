@@ -266,7 +266,7 @@ class MlflowSessionCache:
             self.artifacts_by_run.pop(key, None)
         if key not in self.artifacts_by_run:
             self.artifacts_by_run[key] = collector(
-                self.client, str(run_id), max_depth=int(max_depth)
+                self.tracking_uri, str(run_id), max_depth=int(max_depth)
             )
         return self.artifacts_by_run[key]
 
